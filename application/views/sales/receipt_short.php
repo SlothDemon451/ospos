@@ -233,9 +233,9 @@
 	<div style="margin-top:20px;">
 		<table style="width:100%;">
 			<tr>
-				<td style="text-align:left;white-space:nowrap;">Customer ____________________</td>
-				<td style="text-align:center;white-space:nowrap;">Delivery Man ____________________</td>
-				<td style="text-align:right;white-space:nowrap;">Paid ____________________</td>
+				<td style="text-align:left;white-space:nowrap;">cliente ____________________</td>
+				<td style="text-align:center;white-space:nowrap;">repartidor ____________________</td>
+				<td style="text-align:right;white-space:nowrap;">pagado ____________________</td>
 			</tr>
 		</table>
 	</div>

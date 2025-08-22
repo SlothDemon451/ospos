@@ -107,9 +107,9 @@ document.addEventListener('DOMContentLoaded', function() {
 	<div style="margin-top:20px;">
 		<table style="width:100%;">
 			<tr>
-				<td style="text-align:left;white-space:nowrap;">customer ____________________</td>
-				<td style="text-align:center;white-space:nowrap;">delivery man ____________________</td>
-				<td style="text-align:right;white-space:nowrap;">paid ____________________</td>
+				<td style="text-align:left;white-space:nowrap;">cliente ____________________</td>
+				<td style="text-align:center;white-space:nowrap;">repartidor ____________________</td>
+				<td style="text-align:right;white-space:nowrap;">pagado ____________________</td>
 			</tr>
 		</table>
 	</div>
