@@ -32,6 +32,9 @@
 		{
 		?>
 			<div id="customer"><?php echo $this->lang->line('customers_customer').": ".$customer; ?></div>
+			<?php if (!empty($customer_phone)) { ?>
+				<div id="customer_phone"><strong><?php echo $this->lang->line('common_phone_number'); ?>:</strong> <?php echo htmlspecialchars($customer_phone); ?></div>
+			<?php } ?>
 		<?php
 		}
 		?>

@@ -53,11 +53,11 @@ document.addEventListener('DOMContentLoaded', function() {
 			</td>
 			<td>
 				<div class="suspended-info-block">
-					<?php if(isset($customer)) echo htmlspecialchars($customer) . '<br>';
-					if(isset($customer_address)) echo htmlspecialchars($customer_address) . '<br>';
-					if(isset($customer_location)) echo htmlspecialchars($customer_location) . '<br>';
-					if(isset($customer_phone) && $customer_phone) echo htmlspecialchars($customer_phone) . '<br>';
-					if(isset($customer_email) && $customer_email) echo htmlspecialchars($customer_email);
+					<?php if(isset($customer) && !empty($customer)) echo htmlspecialchars($customer) . '<br>';
+					if(isset($customer_address) && !empty($customer_address)) echo htmlspecialchars($customer_address) . '<br>';
+					if(isset($customer_location) && !empty($customer_location)) echo htmlspecialchars($customer_location) . '<br>';
+					if(isset($customer_phone) && !empty($customer_phone)) echo htmlspecialchars($customer_phone) . '<br>';
+					if(isset($customer_email) && !empty($customer_email)) echo htmlspecialchars($customer_email);
 					?>
 				</div>
 			</td>

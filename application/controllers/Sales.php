@@ -1000,10 +1000,32 @@ class Sales extends Secure_Controller
 			$data['first_name'] = $customer_info->first_name;
 			$data['last_name'] = $customer_info->last_name;
 			$data['customer_email'] = $customer_info->email;
-			$data['customer_address'] = $customer_info->address_1;
+			$data['customer_phone'] = $customer_info->phone_number;
+			// Build address with proper comma formatting
+			$address_parts = array();
+			if(!empty($customer_info->address_1)) {
+				$address_parts[] = $customer_info->address_1;
+			}
+			if(!empty($customer_info->address_2)) {
+				$address_parts[] = $customer_info->address_2;
+			}
+			$data['customer_address'] = implode(', ', $address_parts);
 			if(!empty($customer_info->zip) || !empty($customer_info->city))
 			{
-				$data['customer_location'] = $customer_info->zip . ' ' . $customer_info->city . "\n" . $customer_info->state;
+				$location_parts = array();
+				if(!empty($customer_info->zip)) {
+					$location_parts[] = $customer_info->zip;
+				}
+				if(!empty($customer_info->city)) {
+					$location_parts[] = $customer_info->city;
+				}
+				if(!empty($customer_info->state)) {
+					$location_parts[] = $customer_info->state;
+				}
+				if(!empty($customer_info->country)) {
+					$location_parts[] = $customer_info->country;
+				}
+				$data['customer_location'] = implode(', ', $location_parts);
 			}
 			else
 			{
@@ -1033,6 +1055,12 @@ class Sales extends Secure_Controller
 				$data['customer_address'],
 				$data['customer_location']
 			));
+			
+			// Add customer phone if available
+			if(!empty($data['customer_phone']))
+			{
+				$data['customer_info'] .= "\n" . $data['customer_phone'];
+			}
 
 			if($data['customer_account_number'])
 			{
