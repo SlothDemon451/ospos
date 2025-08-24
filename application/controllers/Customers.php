@@ -10,7 +10,9 @@ class Customers extends Persons
 	{
 		parent::__construct('customers');
 
+		$this->load->model('Customer_type');
 		$this->load->library('mailchimp_lib');
+		$this->lang->load('customer_types');
 
 		$CI =& get_instance();
 
@@ -62,6 +64,14 @@ class Customers extends Persons
 		$order  = $this->input->get('order');
 
 		$customers = $this->Customer->search($search, $limit, $offset, $sort, $order);
+		
+		// Debug: Check if search returned FALSE
+		if($customers === FALSE) {
+			log_message('error', 'Customer search returned FALSE in controller');
+			echo json_encode(array('total' => 0, 'rows' => array()));
+			return;
+		}
+		
 		$total_rows = $this->Customer->get_found_rows($search);
 
 		$data_rows = array();
@@ -144,6 +154,15 @@ class Customers extends Persons
 		}
 		$data['packages'] = $packages;
 		$data['selected_package'] = $info->package_id;
+
+		// Get customer types for dropdown
+		$customer_types = array('' => $this->lang->line('items_none'));
+		foreach($this->Customer_type->get_all()->result_array() as $row)
+		{
+			$customer_types[$this->xss_clean($row['customer_type_id'])] = $this->xss_clean($row['name']);
+		}
+		$data['customer_types'] = $customer_types;
+		$data['selected_customer_type'] = $info->customer_type_id;
 
 		if($this->config->item('use_destination_based_tax') == '1')
 		{
@@ -261,6 +280,7 @@ class Customers extends Persons
 			'discount' => $this->input->post('discount') == '' ? 0.00 : $this->input->post('discount'),
 			'discount_type' => $this->input->post('discount_type') == NULL ? PERCENT : $this->input->post('discount_type'),
 			'package_id' => $this->input->post('package_id') == '' ? NULL : $this->input->post('package_id'),
+			'customer_type_id' => $this->input->post('customer_type_id') == '' ? NULL : $this->input->post('customer_type_id'),
 			'taxable' => $this->input->post('taxable') != NULL,
 			'date' => $date_formatter->format('Y-m-d H:i:s'),
 			'employee_id' => $this->input->post('employee_id'),

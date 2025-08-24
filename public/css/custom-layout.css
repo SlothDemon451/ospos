@@ -1,0 +1,91 @@
+/* Custom Layout CSS - Increase Content Width */
+/* This file overrides Bootstrap's default container widths to provide more space */
+
+/* Increase container width for all screen sizes */
+@media (min-width: 576px) {
+    .container {
+        max-width: 700px !important; /* Default: 540px */
+    }
+}
+
+@media (min-width: 768px) {
+    .container {
+        max-width: 900px !important; /* Default: 720px */
+    }
+}
+
+@media (min-width: 992px) {
+    .container {
+        max-width: 1200px !important; /* Default: 960px */
+    }
+}
+
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1400px !important; /* Default: 1140px */
+    }
+}
+
+@media (min-width: 1400px) {
+    .container {
+        max-width: 1600px !important; /* Default: 1320px */
+    }
+}
+
+/* Additional customizations for better content utilization */
+.row {
+    margin-left: -10px;
+    margin-right: -10px;
+}
+
+.col-md-*, .col-lg-*, .col-xl-* {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+/* Make tables more responsive with increased width */
+.table-responsive {
+    min-width: 100%;
+}
+
+/* Increase form widths for better usability */
+.form-control {
+    max-width: none;
+}
+
+/* Improve modal widths */
+.modal-dialog {
+    max-width: 90%;
+}
+
+@media (min-width: 768px) {
+    .modal-dialog {
+        max-width: 800px;
+    }
+}
+
+@media (min-width: 992px) {
+    .modal-dialog {
+        max-width: 1000px;
+    }
+}
+
+/* Improve card and panel layouts */
+.card, .panel {
+    margin-bottom: 20px;
+}
+
+/* Better spacing for content areas */
+.content-wrapper {
+    padding: 20px 0;
+}
+
+/* Improve navigation spacing */
+.navbar-nav > li > a {
+    padding: 15px 20px;
+}
+
+/* Better spacing for main content */
+.main-content {
+    padding: 20px 0;
+}

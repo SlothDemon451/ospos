@@ -95,6 +95,20 @@
 			</div>
 
 			<div class="form-group form-group-sm">	
+				<?php echo form_label($this->lang->line('config_vat_number'), 'vat_number', array('class' => 'control-label col-xs-2')); ?>
+				<div class="col-xs-6">
+					<div class="input-group">
+						<span class="input-group-addon input-sm"><span class="glyphicon glyphicon-credit-card"></span></span>
+						<?php echo form_input(array(
+							'name' => 'vat_number',
+							'id' => 'vat_number',
+							'class' => 'form-control input-sm',
+							'value'=>$this->config->item('vat_number'))); ?>
+					</div>
+				</div>
+			</div>
+
+			<div class="form-group form-group-sm">	
 				<?php echo form_label($this->lang->line('config_fax'), 'fax', array('class' => 'control-label col-xs-2')); ?>
 				<div class="col-xs-6">
 					<div class="input-group">

@@ -128,7 +128,7 @@ class Sales extends Secure_Controller
 
 		if($this->sale_lib->get_mode() == 'return' && $this->Sale->is_valid_receipt($receipt))
 		{
-			// if a valid receipt or invoice was found the search term will be replaced with a receipt number (POS #)
+			// if a valid receipt or invoice was found the search term will be replaced with a receipt number (Ven #)
 			$suggestions[] = $receipt;
 		}
 		// Regular search by item name and barcode
@@ -773,7 +773,7 @@ class Sales extends Secure_Controller
 					$data['dinner_table'],
 					$tax_details_var // tax_details as last argument
 				);
-				$data['sale_id'] = 'POS ' . $data['sale_id_num'];
+				$data['sale_id'] = 'Ven ' . $data['sale_id_num'];
 
 				// Resort and filter cart lines for printing
 				$data['cart'] = $this->sale_lib->sort_and_filter_cart($data['cart']);
@@ -891,7 +891,7 @@ class Sales extends Secure_Controller
 			$tax_details = isset($tax_details) ? $tax_details : array(array(), array());
 			$data['sale_id_num'] = $this->Sale->save($sale_id, $data['sale_status'], $data['cart'], $customer_id, $employee_id, $this->sale_lib->get_delivery_man_id(), $data['comments'], $invoice_number, $work_order_number, $quote_number, $sale_type, $data['payments'], $data['dinner_table'], $tax_details);
 
-			$data['sale_id'] = 'POS ' . $data['sale_id_num'];
+			$data['sale_id'] = 'Ven ' . $data['sale_id_num'];
 
 			$data['cart'] = $this->sale_lib->sort_and_filter_cart($data['cart']);
 			$data = $this->xss_clean($data);
@@ -927,7 +927,7 @@ class Sales extends Secure_Controller
 
 			$text = $this->config->item('invoice_email_message');
 			$tokens = array(new Token_invoice_sequence($sale_data['invoice_number']),
-				new Token_invoice_count('POS ' . $sale_data['sale_id']),
+				new Token_invoice_count('Ven ' . $sale_data['sale_id']),
 				new Token_customer((object)$sale_data));
 			$text = $this->token_lib->render($text, $tokens);
 			$sale_data['mimetype'] = get_mime_by_extension('uploads/' . $this->config->item('company_logo'));
@@ -1129,7 +1129,7 @@ class Sales extends Secure_Controller
 		$this->_load_customer_data($this->sale_lib->get_customer(), $data, TRUE);
 
 		$data['sale_id_num'] = $sale_id;
-		$data['sale_id'] = 'POS ' . $sale_id;
+		$data['sale_id'] = 'Ven ' . $sale_id;
 		$data['comments'] = $sale_info['comment'];
 		$data['invoice_number'] = $sale_info['invoice_number'];
 		$data['quote_number'] = $sale_info['quote_number'];
@@ -1591,7 +1591,7 @@ class Sales extends Secure_Controller
 			$payments[] = array('payment_id' => $payment_id, 'payment_type' => $payment_type, 'payment_amount' => $payment_amount, 'cash_refund' => $cash_refund, 'cash_adjustment' => $cash_adjustment, 'employee_id' => $employee_id);
 		}
 
-		$this->Inventory->update('POS '.$sale_id, ['trans_date' => $sale_time]);
+		$this->Inventory->update('Ven '.$sale_id, ['trans_date' => $sale_time]);
 		if($this->Sale->update($sale_id, $sale_data, $payments))
 		{
 			echo json_encode(array('success' => TRUE, 'message' => $this->lang->line('sales_successfully_updated'), 'id' => $sale_id));
@@ -1832,9 +1832,25 @@ class Sales extends Secure_Controller
 		$items = $this->Sale->get_sale_items($sale_id)->result_array();
 		$payments = $this->Sale->get_sale_payments($sale_id)->result_array();
 
+		// Map database fields to cart structure for the receipt template
+		$cart = array();
+		foreach ($items as $item) {
+			$cart[] = array(
+				'item_id' => $item['item_id'],
+				'name' => $item['description'] ?: $this->Item->get_info($item['item_id'])->name,
+				'quantity' => $item['quantity_purchased'],
+				'price' => $item['item_unit_price'],
+				'discount' => $item['discount'],
+				'discount_type' => $item['discount_type'],
+				'print_option' => $item['print_option'],
+				'line' => $item['line']
+			);
+		}
+
 		// Prepare data for receipt view (mimic normal receipt)
 		$data = $this->_load_sale_data($sale_id);
 		$data['is_suspended'] = TRUE;
+		$data['cart'] = $cart; // Set cart for the receipt template
 		$data['items'] = $items;
 		$data['payments'] = $payments;
 

@@ -139,6 +139,13 @@
 				<?php endif; ?>
 
 				<div class="form-group form-group-sm">
+					<?php echo form_label($this->lang->line('customer_types_name'), 'customer_type_id', array('class'=>'control-label col-xs-3')); ?>
+					<div class='col-xs-8'>
+						<?php echo form_dropdown('customer_type_id', $customer_types, $selected_customer_type, array('class'=>'form-control')); ?>
+					</div>
+				</div>
+
+				<div class="form-group form-group-sm">
 					<?php echo form_label($this->lang->line('customers_taxable'), 'taxable', array('class' => 'control-label col-xs-3')); ?>
 					<div class='col-xs-1'>
 						<?php echo form_checkbox('taxable', '1', $person_info->taxable == '' ? TRUE : (boolean)$person_info->taxable); ?>

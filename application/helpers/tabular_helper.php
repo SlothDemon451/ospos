@@ -248,6 +248,7 @@ function get_customer_manage_table_headers()
 		array('first_name' => $CI->lang->line('common_first_name')),
 		array('email' => $CI->lang->line('common_email')),
 		array('phone_number' => $CI->lang->line('common_phone_number')),
+		array('customer_types.name' => $CI->lang->line('customer_types_name')),
 		array('total' => $CI->lang->line('common_total_spent'), 'sortable' => FALSE),
 		array('amount_due' => $CI->lang->line('sales_amount_due'), 'sortable' => FALSE),
 		array('sales' => 'Sales', 'sortable' => FALSE)
@@ -276,6 +277,7 @@ function get_customer_data_row($person, $stats)
 		'first_name' => $person->first_name,
 		'email' => empty($person->email) ? '' : mailto($person->email, $person->email),
 		'phone_number' => $person->phone_number,
+		'customer_types.name' => empty($person->customer_type_name) ? '' : $person->customer_type_name,
 		'total' => to_currency($stats->total),
 		'amount_due' => to_currency($stats->amount_due),
 		'sales' => anchor("customers/sales/$person->person_id", '<span class="glyphicon glyphicon-list-alt"></span>', array('class'=>'btn btn-info btn-xs', 'title'=>'View Sales')),
@@ -935,6 +937,38 @@ function get_item_subcategory_data_row($subcategory)
 		'edit' => anchor($controller_name . "/view/$subcategory->id", '<span class="glyphicon glyphicon-edit"></span>',
 			array('class'=>'modal-dlg', 'data-btn-submit' => $CI->lang->line('common_submit'), 'title'=>$CI->lang->line($controller_name.'_update'))
 		)
+	);
+}
+
+/*
+Get the header for the customer type tabular view
+*/
+function get_customer_type_manage_table_headers()
+{
+	$CI =& get_instance();
+
+	$headers = array(
+		array('customer_types.customer_type_id' => $CI->lang->line('common_id')),
+		array('customer_types.name' => $CI->lang->line('customer_types_name')),
+		array('customer_types.description' => $CI->lang->line('customer_types_description'))
+	);
+
+	return transform_headers($headers);
+}
+
+/*
+Get the html data row for the customer type
+*/
+function get_customer_type_data_row($customer_type, $CI)
+{
+	$controller_name = strtolower(get_class($CI));
+
+	return array (
+		'customer_types.customer_type_id' => $customer_type->customer_type_id,
+		'customer_types.name' => $customer_type->name,
+		'customer_types.description' => $customer_type->description,
+		'edit' => anchor($controller_name."/view/$customer_type->customer_type_id", '<span class="glyphicon glyphicon-edit"></span>',
+			array('class'=>'modal-dlg', 'data-btn-submit' => $CI->lang->line('common_submit'), 'title'=>$CI->lang->line($controller_name.'_update'))),
 	);
 }
 ?>

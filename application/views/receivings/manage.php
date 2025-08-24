@@ -1,8 +1,8 @@
 <?php $this->load->view('partial/header'); ?>
 
 <div class="container-fluid">
-  <div class="panel panel-default">
-    <div class="panel-heading">
+<div class="panel panel-default">
+  <div class="panel-heading">
       <h3 class="panel-title">Manage Receivings</h3>
     </div>
     <div class="panel-body">
@@ -21,45 +21,45 @@
             Show Due Only
           </label>
         </div>
-        <button type="submit" class="btn btn-primary btn-sm" style="margin-left:10px;">Filter</button>
-      </form>
-    </div>
-    <div class="panel-body">
-      <table class="table table-bordered table-hover">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Date</th>
-            <th>Supplier</th>
-            <th>Employee</th>
-            <th class="text-right">Total</th>
-            <th class="text-right">Paid</th>
-            <th class="text-right">Amount Due</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-        <?php if(empty($receivings)): ?>
-          <tr><td colspan="8" class="text-center">No receivings found</td></tr>
-        <?php else: ?>
-          <?php foreach($receivings as $r): ?>
-          <tr>
-            <td><?php echo (int)$r->receiving_id; ?></td>
-            <td><?php echo to_datetime(strtotime($r->receiving_time)); ?></td>
-            <td><?php echo htmlspecialchars($r->supplier_name); ?></td>
-            <td><?php echo htmlspecialchars($r->employee_name); ?></td>
-            <td class="text-right"><?php echo to_currency($r->total); ?></td>
-            <td class="text-right"><?php echo to_currency($r->payments_total); ?></td>
-            <td class="text-right"><?php echo to_currency($r->amount_due); ?></td>
-            <td>
-              <a href="<?php echo site_url('receivings/receipt/'.(int)$r->receiving_id); ?>" target="_blank" class="btn btn-default btn-xs">Receipt</a>
-              <button class="btn btn-success btn-xs apply-payment-btn" data-id="<?php echo (int)$r->receiving_id; ?>" data-due="<?php echo (float)$r->amount_due; ?>">Apply Payment</button>
-            </td>
-          </tr>
-          <?php endforeach; ?>
-        <?php endif; ?>
-        </tbody>
-      </table>
+      <button type="submit" class="btn btn-primary btn-sm" style="margin-left:10px;">Filter</button>
+    </form>
+  </div>
+  <div class="panel-body">
+    <table class="table table-bordered table-hover">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Date</th>
+          <th>Supplier</th>
+          <th>Employee</th>
+          <th class="text-right">Total</th>
+          <th class="text-right">Paid</th>
+          <th class="text-right">Amount Due</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      <?php if(empty($receivings)): ?>
+        <tr><td colspan="8" class="text-center">No receivings found</td></tr>
+      <?php else: ?>
+        <?php foreach($receivings as $r): ?>
+        <tr>
+          <td><?php echo (int)$r->receiving_id; ?></td>
+          <td><?php echo to_datetime(strtotime($r->receiving_time)); ?></td>
+          <td><?php echo htmlspecialchars($r->supplier_name); ?></td>
+          <td><?php echo htmlspecialchars($r->employee_name); ?></td>
+          <td class="text-right"><?php echo to_currency($r->total); ?></td>
+          <td class="text-right"><?php echo to_currency($r->payments_total); ?></td>
+          <td class="text-right"><?php echo to_currency($r->amount_due); ?></td>
+          <td>
+            <a href="<?php echo site_url('receivings/receipt/'.(int)$r->receiving_id); ?>" target="_blank" class="btn btn-default btn-xs">Receipt</a>
+            <button class="btn btn-success btn-xs apply-payment-btn" data-id="<?php echo (int)$r->receiving_id; ?>" data-due="<?php echo (float)$r->amount_due; ?>">Apply Payment</button>
+          </td>
+        </tr>
+        <?php endforeach; ?>
+      <?php endif; ?>
+      </tbody>
+    </table>
     </div>
   </div>
 </div>
@@ -148,38 +148,38 @@ $(document).ready(function(){
     
     if(!paymentType) {
       alert('Please select a payment method.');
-      return;
-    }
-    
+        return;
+      }
+      
     if(amount > currentOutstandingAmount) {
       alert('Payment amount cannot exceed the outstanding amount of ' + currentOutstandingAmount.toFixed(2));
-      return;
-    }
-    
+        return;
+      }
+      
     // Show loading state
     $('#submitPayment').prop('disabled', true).text('Processing...');
     
     // Submit payment
-    $.ajax({
+      $.ajax({
       url: '<?php echo site_url('receivings/apply_payment/'); ?>' + currentReceivingId,
-      type: 'POST',
-      data: {
-        amount: amount,
+        type: 'POST',
+        data: {
+          amount: amount,
         payment_type: paymentType
-      },
-      dataType: 'json',
-      success: function(response) {
-        if (response.success) {
-          alert('Payment of ' + response.amount_paid + ' applied successfully. Outstanding amount: ' + response.outstanding_amount);
+        },
+        dataType: 'json',
+        success: function(response) {
+          if (response.success) {
+            alert('Payment of ' + response.amount_paid + ' applied successfully. Outstanding amount: ' + response.outstanding_amount);
           $('#paymentModal').modal('hide');
-          location.reload();
-        } else {
-          alert('Payment failed: ' + (response.message || 'Unknown error'));
-        }
-      },
-      error: function(xhr, status, error) {
-        console.error('Payment error:', error);
-        alert('Payment failed. Please try again.');
+            location.reload();
+          } else {
+            alert('Payment failed: ' + (response.message || 'Unknown error'));
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error('Payment error:', error);
+          alert('Payment failed. Please try again.');
       },
       complete: function() {
         // Reset button state

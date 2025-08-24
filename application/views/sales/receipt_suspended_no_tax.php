@@ -43,8 +43,11 @@ document.addEventListener('DOMContentLoaded', function() {
 			<td>
 				<div class="suspended-info-block">
 					Num.: <?php echo $sale_id; ?><br>
-					Fecha: <?php echo $transaction_date . ' ' . $transaction_time; ?><br>
+					Fecha: <?php echo $transaction_time; ?><br>
 					<?php if($this->config->item('company')) echo htmlspecialchars($this->config->item('company')) . '<br>';
+					if($this->config->item('vat_number')){
+						echo 'VAT: ' . htmlspecialchars($this->config->item('vat_number')) . '<br>';
+					}
 					if($this->config->item('address')) echo nl2br(htmlspecialchars($this->config->item('address'))) . '<br>';
 					if($this->config->item('phone')) echo htmlspecialchars($this->config->item('phone')) . '<br>';
 					if($this->config->item('email')) echo htmlspecialchars($this->config->item('email'));
@@ -67,21 +70,48 @@ document.addEventListener('DOMContentLoaded', function() {
 	<!-- Items Table -->
 	<table class="suspended-items-table">
 		<tr>
-			<th style="width:55%;">Producto:</th>
-			<th style="width:15%;">Precio:</th>
-			<th style="width:15%;">Cantidad:</th>
-			<th style="width:15%;">Total:</th>
+			<th style="width:40%;">Producto:</th>
+			<th style="width:12%;">Precio:</th>
+			<th style="width:12%;">Dto.:</th>
+			<th style="width:12%;">Cantidad:</th>
+			<th style="width:12%;">Total:</th>
 		</tr>
-		<?php foreach($cart as $line=>$item): if($item['print_option'] == PRINT_YES): ?>
+		<?php 
+		$subtotal_sum = 0;
+		foreach($cart as $line=>$item): if($item['print_option'] == PRINT_YES): 
+			$discount = isset($item['discount']) ? $item['discount'] : 0;
+			$discount_type = isset($item['discount_type']) ? $item['discount_type'] : 0;
+			$discount_display = $discount > 0 
+				? ($discount_type == 1 
+					? to_currency($discount)   
+					: to_decimals($discount) . '%' 
+				  ) 
+				: '-';
+			
+			// Calculate item total with discount
+			$item_total = $item['quantity'] * $item['price'];
+			$discount_amount = 0;
+			if ($discount > 0) {
+				if ($discount_type == 1) { // fixed amount
+					$discount_amount = $discount * $item['quantity'];
+					
+				} else { // percent
+					$discount_amount = $item_total * ($discount / 100);
+				}
+			}
+			$item_total_after_discount = $item_total - $discount_amount;
+			$subtotal_sum += $item_total_after_discount;
+		?>
 		<tr>
 			<td><?php echo htmlspecialchars($item['name'] . (isset($item['attribute_values']) ? ' ' . $item['attribute_values'] : '')); ?></td>
 			<td><?php echo to_currency($item['price']); ?></td>
+			<td style="text-align:center;"><?php echo $discount_display; ?></td>
 			<td><?php echo to_quantity_decimals($item['quantity']); ?></td>
-			<td><?php echo to_currency($item[($this->config->item('receipt_show_total_discount') ? 'total' : 'discounted_total')]); ?></td>
+			<td><?php echo to_currency($item_total_after_discount); ?></td>
 		</tr>
 		<?php endif; endforeach; ?>
 		<tr class="suspended-total-row">
-			<td colspan="3" style="text-align:right;">Total a pagar:</td>
+			<td colspan="4" style="text-align:right;">Total a pagar:</td>
 			<td><?php echo to_currency($total); ?></td>
 		</tr>
 	</table>
@@ -101,6 +131,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	<div class="suspended-footer-note">
 		Todos los gastos están incluidos en el total
+	</div>
+
+	<div class="suspended-return-policy" style="margin-top: 15px; padding: 8px; border: 1px solid #ccc; font-size: 12px;">
+		<strong>Política de Devolución:</strong><br>
+		<?php echo nl2br($this->config->item('return_policy')); ?>
 	</div>
 
 	<!-- Signatures -->

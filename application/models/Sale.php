@@ -484,7 +484,7 @@ class Sale extends CI_Model
 				$sale_info = $this->get_sale_by_invoice_number($receipt_sale_id);
 				if($sale_info->num_rows() > 0)
 				{
-					$receipt_sale_id = 'POS ' . $sale_info->row()->sale_id;
+					$receipt_sale_id = 'Ven ' . $sale_info->row()->sale_id;
 
 					return TRUE;
 				}
@@ -696,7 +696,7 @@ class Sale extends CI_Model
 				}
 
 				// Inventory Count Details
-				$sale_remarks = 'POS '.$sale_id;
+				$sale_remarks = 'Ven '.$sale_id;
 				$inv_data = array(
 					'trans_date'		=> date('Y-m-d H:i:s'),
 					'trans_items'		=> $item['item_id'],

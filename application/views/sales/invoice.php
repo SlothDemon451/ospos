@@ -76,6 +76,11 @@ $(document).ready(function()
 			<?php
 			}
 			?>
+			<?php
+			if($this->config->item('vat_number')){
+				echo 'VAT: ' . htmlspecialchars($this->config->item('vat_number'));
+			}
+			?>
 		</div>
 	</div>
 
@@ -161,7 +166,7 @@ $(document).ready(function()
 		?>
 
 		<tr>
-			<td class="blank" colspan="<?php echo $invoice_columns; ?>" align="center"><?php echo '&nbsp;'; ?></td>
+			<td class="blank" colspan="<?php echo $invoice_columns; ?>" style="text-align:center;"><?php echo '&nbsp;'; ?></td>
 		</tr>
 
 		<tr>
@@ -241,15 +246,10 @@ $(document).ready(function()
 
 	</table>
 
-	<div id="terms">
-		<div id="sale_return_policy">
-			<h5>
-				<div><?php echo nl2br($this->config->item('payment_message')); ?></div>
-				<div style='padding:4%;'><?php echo empty($comments) ? '' : $this->lang->line('sales_comments') . ': ' . $comments; ?></div>
-				<div style='padding:4%;'><?php echo $this->config->item('invoice_default_comments'); ?></div>
-			</h5>
-			<div style='padding:2%;'><?php echo nl2br($this->config->item('return_policy')); ?></div>
-		</div>
+	<div class="suspended-return-policy" style="margin-top: 15px; padding: 8px; border: 1px solid #ccc; font-size: 12px;">
+		<strong>Política de Devolución:</strong><br>
+		<?php echo nl2br($this->config->item('return_policy')); ?>
+	</div>
 		<!-- Signatures -->
 		<div style="margin-top:20px;">
 			<table style="width:100%;">
@@ -261,7 +261,7 @@ $(document).ready(function()
 			</table>
 		</div>
 		
-		<div id='barcode'>
+		<div id='barcode' style="text-align:center;">
 			<img style='padding-top:4%;' src='data:image/png;base64,<?php echo $barcode; ?>' /><br>
 			<?php echo $sale_id; ?>
 		</div>

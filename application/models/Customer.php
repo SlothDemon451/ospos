@@ -50,17 +50,24 @@ class Customer extends Person
 	*/
 	public function get_all($rows = 0, $limit_from = 0)
 	{
+		$this->db->select('customers.*, people.*, customer_types.name as customer_type_name');
 		$this->db->from('customers');
-		$this->db->join('people', 'customers.person_id = people.person_id');
-		$this->db->where('deleted', 0);
-		$this->db->order_by('last_name', 'asc');
+		$this->db->join('people AS people', 'customers.person_id = people.person_id');
+		$this->db->join('customer_types AS customer_types', 'customer_types.customer_type_id = customers.customer_type_id', 'left');
+		$this->db->where('customers.deleted', 0);
+		$this->db->order_by('people.last_name', 'asc');
 
 		if($rows > 0)
 		{
 			$this->db->limit($rows, $limit_from);
 		}
 
-		return $this->db->get();
+		$query = $this->db->get();
+		if($query === FALSE) {
+			log_message('error', 'Customer::get_all query failed: ' . $this->db->last_query());
+			return $this->db->query("SELECT 1 WHERE FALSE");
+		}
+		return $query;
 	}
 
 	/*
@@ -68,10 +75,16 @@ class Customer extends Person
 	*/
 	public function get_info($customer_id)
 	{
+		$this->db->select('customers.*, people.*, customer_types.name as customer_type_name');
 		$this->db->from('customers');
-		$this->db->join('people', 'people.person_id = customers.person_id');
+		$this->db->join('people AS people', 'people.person_id = customers.person_id');
+		$this->db->join('customer_types AS customer_types', 'customer_types.customer_type_id = customers.customer_type_id', 'left');
 		$this->db->where('customers.person_id', $customer_id);
 		$query = $this->db->get();
+		if($query === FALSE) {
+			log_message('error', 'Customer::get_info query failed: ' . $this->db->last_query());
+			return FALSE;
+		}
 
 		if($query->num_rows() == 1)
 		{
@@ -409,34 +422,64 @@ class Customer extends Person
 		{
 			$this->db->select('COUNT(customers.person_id) as count');
 		}
+		else
+		{
+			$this->db->select('customers.*, people.*, customer_types.name as customer_type_name');
+		}
 
 		$this->db->from('customers AS customers');
-		$this->db->join('people', 'customers.person_id = people.person_id');
+		$this->db->join('people AS people', 'customers.person_id = people.person_id');
+		$this->db->join('customer_types AS customer_types', 'customer_types.customer_type_id = customers.customer_type_id', 'left');
+		
+
 		$this->db->group_start();
-			$this->db->like('first_name', $search);
-			$this->db->or_like('last_name', $search);
-			$this->db->or_like('email', $search);
-			$this->db->or_like('phone_number', $search);
-			$this->db->or_like('account_number', $search);
-			$this->db->or_like('company_name', $search);
-			$this->db->or_like('CONCAT(first_name, " ", last_name)', $search);
+			$this->db->like('people.first_name', $search);
+			$this->db->or_like('people.last_name', $search);
+			$this->db->or_like('people.email', $search);
+			$this->db->or_like('people.phone_number', $search);
+			$this->db->or_like('customers.account_number', $search);
+			$this->db->or_like('customers.company_name', $search);
+			$this->db->or_like('CONCAT(people.first_name, " ", people.last_name)', $search);
 		$this->db->group_end();
-		$this->db->where('deleted', 0);
+		$this->db->where('customers.deleted', 0);
 
 		// get_found_rows case
 		if($count_only == TRUE)
 		{
-			return $this->db->get()->row()->count;
+			$query = $this->db->get();
+			if($query === FALSE) {
+				log_message('error', 'Customer::search count query failed: ' . $this->db->last_query());
+				return 0;
+			}
+			return $query->row()->count;
 		}
 
-		$this->db->order_by($sort, $order);
+		// Fix the order by to use the correct table prefix
+		if($sort == 'last_name') {
+			$this->db->order_by('people.last_name', $order);
+		} elseif($sort == 'first_name') {
+			$this->db->order_by('people.first_name', $order);
+		} elseif($sort == 'email') {
+			$this->db->order_by('people.email', $order);
+		} elseif($sort == 'phone_number') {
+			$this->db->order_by('people.phone_number', $order);
+		} else {
+			$this->db->order_by('people.last_name', 'asc');
+		}
 
 		if($rows > 0)
 		{
 			$this->db->limit($rows, $limit_from);
 		}
 
-		return $this->db->get();
+		$query = $this->db->get();
+		if($query === FALSE) {
+			log_message('error', 'Customer::search query failed: ' . $this->db->last_query());
+			log_message('error', 'Customer::search DB error: ' . print_r($this->db->error(), TRUE));
+			// Return empty result set instead of FALSE
+			return $this->db->query("SELECT 1 WHERE FALSE");
+		}
+		return $query;
 	}
 }
 ?>

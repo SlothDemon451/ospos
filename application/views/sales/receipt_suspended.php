@@ -47,9 +47,12 @@ document.addEventListener('DOMContentLoaded', function() {
 		<tr>
 			<td>
 				<div class="suspended-info-block">
-					Num.: <?php echo $sale_id; ?><br>
-					Fecha: <?php echo $transaction_date . ' ' . $transaction_time; ?><br>
+					Num: <?php echo $sale_id; ?><br>
+					Fecha: <?php echo $transaction_time; ?><br>
 					<?php if($this->config->item('company')) echo htmlspecialchars($this->config->item('company')) . '<br>';
+					if($this->config->item('vat_number')){
+						echo 'VAT: ' . htmlspecialchars($this->config->item('vat_number')) . '<br>';
+					}
 					if($this->config->item('address')) echo nl2br(htmlspecialchars($this->config->item('address'))) . '<br>';
 					if($this->config->item('phone')) echo htmlspecialchars($this->config->item('phone')) . '<br>';
 					if($this->config->item('email')) echo htmlspecialchars($this->config->item('email'));
@@ -130,10 +133,25 @@ document.addEventListener('DOMContentLoaded', function() {
 		foreach($cart as $line=>$item): if($item['print_option'] == PRINT_YES):
 			$discount = isset($item['discount']) ? $item['discount'] : 0;
 			$discount_type = isset($item['discount_type']) ? $item['discount_type'] : 0;
-			$discount_display = $discount > 0 ? ($discount_type == 1 ? to_decimals($discount) . '%' : to_currency($discount)) : '0%';
+			$discount_display = $discount > 0 
+     			? ($discount_type == 1 
+     			    ? to_currency($discount)   
+     			    : to_decimals($discount) . '%' 
+     			  ) 
+     			: '-';
+			
 			list($line_subtotal, $line_tax, $line_total) = calc_line_tax_and_subtotal($item, $CI);
 			$subtotal_sum += $line_subtotal;
 			$tax_sum += $line_tax;
+			$discount_amount = 0;
+			if ($discount > 0) {
+				if ($discount_type == 1) { 
+					$discount_amount = bcmul($item['quantity'], $discount);
+				} else {
+					$discount_amount = bcmul($line_total, bcdiv($discount, 100));
+				}
+			}
+			$line_total = $line_total - $discount_amount;
 		?>
 		<tr>
 			<td><?php echo htmlspecialchars($item['name'] . (isset($item['attribute_values']) ? ' ' . $item['attribute_values'] : '')); ?></td>
@@ -165,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			<?php foreach($taxes as $tax): ?>
 			<tr>
 				<td class="tax-label"><?php echo htmlspecialchars($tax['tax_group']); ?> <?php echo isset($tax['tax_rate']) ? (is_numeric($tax['tax_rate']) ? (float)$tax['tax_rate'] . '%' : $tax['tax_rate']) : ''; ?></td>
-				<td class="tax-amount"><?php echo to_currency($tax['sale_tax_amount']); ?></td>
+				<td class="tax-amount"><?php echo to_currency($tax_sum); ?></td>
 			</tr>
 			<?php endforeach; ?>
 		</table>
@@ -187,6 +205,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	<div class="suspended-footer-note">
 		Todos los gastos e impuestos están incluidos en el total
+	</div>
+
+	<div class="suspended-return-policy" style="margin-top: 15px; padding: 8px; border: 1px solid #ccc; font-size: 12px;">
+		<strong>Política de Devolución:</strong><br>
+		<?php echo nl2br($this->config->item('return_policy')); ?>
 	</div>
 
 	<!-- Signatures -->
