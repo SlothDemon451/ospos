@@ -2106,3 +2106,5 @@ ERROR - 2025-08-24 19:49:41 --> Customer::get_stats query failed for customer_id
     [message] => Unknown column 'sales_items_temp.avg_discount' in 'field list'
 )
 
+ERROR - 2025-08-24 19:58:15 --> Severity: Notice --> Undefined offset: 1 C:\laragon\www\ospos\application\libraries\Sale_lib.php 1064
+ERROR - 2025-08-24 19:58:15 --> Severity: Notice --> Trying to access array offset on value of type null C:\laragon\www\ospos\application\libraries\Sale_lib.php 1064

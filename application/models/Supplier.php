@@ -8,6 +8,9 @@ class Supplier extends Person
 {
 	const GOODS_SUPPLIER = 0;
 	const COST_SUPPLIER = 1;
+	const PLASTICO_SUPPLIER = 2;
+	const CARTON_SUPPLIER = 3;
+	const ALMINIO_SUPPLIER = 4;
 
 	/*
 	Determines if a given person_id is a customer
@@ -285,7 +288,10 @@ class Supplier extends Person
 	{
 		return array(
 			self::GOODS_SUPPLIER => $this->lang->line('suppliers_goods'),
-			self::COST_SUPPLIER => $this->lang->line('suppliers_cost')
+			self::COST_SUPPLIER => $this->lang->line('suppliers_cost'),
+			self::PLASTICO_SUPPLIER => $this->lang->line('suppliers_plastico'),
+			self::CARTON_SUPPLIER => $this->lang->line('suppliers_carton'),
+			self::ALMINIO_SUPPLIER => $this->lang->line('suppliers_alminio')
 		);
 	}
 
@@ -301,6 +307,18 @@ class Supplier extends Person
 		elseif($id == self::COST_SUPPLIER)
 		{
 			return $this->lang->line('suppliers_cost');
+		}
+		elseif($id == self::PLASTICO_SUPPLIER)
+		{
+			return $this->lang->line('suppliers_plastico');
+		}
+		elseif($id == self::CARTON_SUPPLIER)
+		{
+			return $this->lang->line('suppliers_carton');
+		}
+		elseif($id == self::ALMINIO_SUPPLIER)
+		{
+			return $this->lang->line('suppliers_alminio');
 		}
 	}
 }

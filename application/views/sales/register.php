@@ -309,7 +309,7 @@ if(isset($success))
 								}
 								?>
 
-								<td colspan='3' style="text-align: left;">
+								<td colspan='12' style="text-align: left;">
 									<?php
 									if($item['allow_alt_description'])
 									{
