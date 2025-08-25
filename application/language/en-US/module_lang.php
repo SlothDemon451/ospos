@@ -51,3 +51,5 @@ $lang["module_item_categories"] = "Categories";
 $lang["module_item_categories_desc"] = "Manage item categories";
 $lang["module_item_subcategories"] = "Subcategories";
 $lang["module_item_subcategories_desc"] = "Manage item subcategories";
+$lang["module_simple_packages"] = "Simple Packages";
+$lang["module_simple_packages_desc"] = "Add, Update, Delete, and Search Simple Packages.";

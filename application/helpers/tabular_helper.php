@@ -598,6 +598,41 @@ function get_item_kits_manage_table_headers()
 }
 
 /*
+Get the header for the simple packages tabular view
+*/
+function get_simple_packages_manage_table_headers()
+{
+	$CI =& get_instance();
+
+	$headers = array(
+		array('package_id' => 'ID'),
+		array('name' => 'Name'),
+		array('package_number' => 'Package Number'),
+		array('description' => 'Description'),
+		array('package_price' => 'Package Price'),
+		array('total_price' => 'Total Price'),
+		array('active' => 'Status')
+	);
+
+	// Transform headers without edit column (editable = FALSE)
+	$transformed_headers = transform_headers($headers, FALSE, FALSE);
+	
+	// Manually add the edit column with specific configuration
+	$headers_array = json_decode($transformed_headers, TRUE);
+	$headers_array[] = array(
+		'field' => 'edit',
+		'title' => '',
+		'switchable' => FALSE,
+		'sortable' => FALSE,
+		'checkbox' => FALSE,
+		'class' => 'print_hide',
+		'formatter' => 'actionFormatter'
+	);
+	
+	return json_encode($headers_array);
+}
+
+/*
 Get the html data row for the item kit
 */
 function get_item_kit_data_row($item_kit)
@@ -616,6 +651,26 @@ function get_item_kit_data_row($item_kit)
 		'edit' => anchor($controller_name."/view/$item_kit->item_kit_id", '<span class="glyphicon glyphicon-edit"></span>',
 			array('class'=>'modal-dlg', 'data-btn-submit' => $CI->lang->line('common_submit'), 'title'=>$CI->lang->line($controller_name.'_update'))
 		)
+	);
+}
+
+/*
+Get the html data row for the simple package
+*/
+function get_simple_package_data_row($package)
+{
+	$CI =& get_instance();
+
+	$controller_name = strtolower(get_class($CI));
+
+	return array (
+		'package_id' => $package->package_id,
+		'name' => $package->name,
+		'package_number' => $package->package_number,
+		'description' => $package->description,
+		'package_price' => isset($package->package_price) && $package->package_price > 0 ? to_currency($package->package_price - ($package->package_price * (isset($package->discount) ? $package->discount : 0) / 100)) : to_currency($package->total_price),
+		'total_price' => to_currency($package->total_price),
+		'active' => $package->active ? 'Active' : 'Inactive'
 	);
 }
 
@@ -970,7 +1025,7 @@ function get_customer_type_data_row($customer_type, $CI)
 		'customer_types.name' => $customer_type->name,
 		'customer_types.description' => $customer_type->description,
 		'edit' => anchor($controller_name."/view/$customer_type->customer_type_id", '<span class="glyphicon glyphicon-edit"></span>',
-			array('class'=>'modal-dlg', 'data-btn-submit' => $CI->lang->line('common_submit'), 'title'=>$CI->lang->line($controller_name.'_update'))),
+			array('class'=>'modal-dlg', 'data-btn-submit' => $CI->lang->line('common_submit'), 'title'=>$CI->lang->line($controller_name.'_update')))
 	);
 }
 ?>

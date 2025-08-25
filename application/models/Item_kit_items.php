@@ -19,8 +19,16 @@ class Item_kit_items extends CI_Model
 		$this->db->or_where('item_kit_number', $item_kit_id);
 		$this->db->order_by('kit_sequence', 'asc');
 
+		$query = $this->db->get();
+		
+		// Check if query was successful
+		if ($query === FALSE) {
+			log_message('error', 'Database query failed in Item_kit_items::get_info() for item_kit_id: ' . $item_kit_id);
+			return FALSE;
+		}
+
 		//return an array of item kit items for an item
-		return $this->db->get()->result_array();
+		return $query->result_array();
 	}
 
 	/*
@@ -33,8 +41,16 @@ class Item_kit_items extends CI_Model
 
 		$this->db->order_by('kit_sequence', 'desc');
 
+		$query = $this->db->get();
+		
+		// Check if query was successful
+		if ($query === FALSE) {
+			log_message('error', 'Database query failed in Item_kit_items::get_info_for_sale() for item_kit_id: ' . $item_kit_id);
+			return FALSE;
+		}
+
 		//return an array of item kit items for an item
-		return $this->db->get()->result_array();
+		return $query->result_array();
 	}
 	/*
 	Inserts or updates an item kit's items

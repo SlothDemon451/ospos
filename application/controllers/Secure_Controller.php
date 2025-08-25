@@ -78,7 +78,6 @@ class Secure_Controller extends CI_Controller
 
 		foreach($allowed_modules->result() as $module)
 		{
-			if ($module->module_id === 'item_kits') continue; // Hide item kits from menu/navbar
 			$data['allowed_modules'][] = $module;
 		}
 

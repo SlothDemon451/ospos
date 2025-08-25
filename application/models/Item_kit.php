@@ -14,7 +14,15 @@ class Item_kit extends CI_Model
 		$this->db->from('item_kits');
 		$this->db->where('item_kit_id', $item_kit_id);
 
-		return ($this->db->get()->num_rows() == 1);
+		$query = $this->db->get();
+		
+		// Check if query was successful
+		if ($query === FALSE) {
+			log_message('error', 'Database query failed in Item_kit::exists() for item_kit_id: ' . $item_kit_id);
+			return FALSE;
+		}
+
+		return ($query->num_rows() == 1);
 	}
 
 	/*
@@ -58,7 +66,15 @@ class Item_kit extends CI_Model
 			$this->db->where('item_kit_id !=', (int) $item_kit_id);
 		}
 
-		return ($this->db->get('item_kits')->num_rows() >= 1);
+		$query = $this->db->get('item_kits');
+		
+		// Check if query was successful
+		if ($query === FALSE) {
+			log_message('error', 'Database query failed in Item_kit::item_number_exists() for item_kit_number: ' . $item_kit_number);
+			return FALSE;
+		}
+
+		return ($query->num_rows() >= 1);
 	}
 
 	/*
@@ -72,42 +88,66 @@ class Item_kit extends CI_Model
 	}
 
 	/*
+	Check if the item_kits table exists
+	*/
+	public function table_exists()
+	{
+		$tables = $this->db->list_tables();
+		$table_name = $this->db->dbprefix . 'item_kits';
+		
+		if (ENVIRONMENT === 'development') {
+			log_message('debug', 'Available tables: ' . json_encode($tables));
+			log_message('debug', 'Looking for table: ' . $table_name);
+		}
+		
+		return in_array($table_name, $tables);
+	}
+
+	/*
 	Gets information about a particular item kit
 	*/
 	public function get_info($item_kit_id)
 	{
+		// Debug: Log the table name being used
+		if (ENVIRONMENT === 'development') {
+			log_message('debug', 'Item_kit::get_info() called with item_kit_id: ' . $item_kit_id);
+			log_message('debug', 'Database prefix: ' . $this->db->dbprefix);
+			log_message('debug', 'Full table name: ' . $this->db->dbprefix . 'item_kits');
+		}
+
+		// Check if table exists first
+		if (!$this->table_exists()) {
+			log_message('error', 'Table item_kits does not exist');
+			return FALSE;
+		}
+
 		$this->db->select('
 		item_kit_id,
 		item_kits.name as name,
 		item_kit_number,
-		items.name as item_name,
 		item_kits.description,
-		items.description as item_description,
 		item_kits.item_id as kit_item_id,
-		kit_discount,
-		kit_discount_type,
+		kit_discount_percent as kit_discount,
 		price_option,
-		print_option,
-		category,
-		supplier_id,
-		item_number,
-		cost_price,
-		unit_price,
-		reorder_level,
-		receiving_quantity,
-		pic_filename,
-		allow_alt_description,
-		is_serialized,
-		items.deleted,
-		item_type,
-		stock_type');
+		print_option');
 
 		$this->db->from('item_kits');
-		$this->db->join('items', 'item_kits.item_id = items.item_id', 'left');
 		$this->db->where('item_kit_id', $item_kit_id);
 		$this->db->or_where('item_kit_number', $item_kit_id);
 
+		// Debug: Log the final query
+		if (ENVIRONMENT === 'development') {
+			log_message('debug', 'Final SQL query: ' . $this->db->get_compiled_select());
+		}
+
 		$query = $this->db->get();
+
+		// Check if query was successful
+		if ($query === FALSE) {
+			log_message('error', 'Database query failed in Item_kit::get_info() for item_kit_id: ' . $item_kit_id);
+			log_message('error', 'Database error: ' . json_encode($this->db->error()));
+			return FALSE;
+		}
 
 		if($query->num_rows()==1)
 		{
@@ -119,9 +159,37 @@ class Item_kit extends CI_Model
 			$item_obj = new stdClass();
 
 			//Get all the fields from items table
-			foreach($this->db->list_fields('item_kits') as $field)
-			{
-				$item_obj->$field = '';
+			try {
+				$fields = $this->db->list_fields('item_kits');
+				if ($fields !== FALSE) {
+					foreach($fields as $field)
+					{
+						$item_obj->$field = '';
+					}
+				} else {
+					// If list_fields fails, create a basic object with common fields
+					$item_obj->item_kit_id = '';
+					$item_obj->name = '';
+					$item_obj->item_kit_number = '';
+					$item_obj->description = '';
+					$item_obj->kit_discount = '';
+					$item_obj->kit_discount_type = '';
+					$item_obj->price_option = '';
+					$item_obj->print_option = '';
+					$item_obj->item_id = '';
+				}
+			} catch (Exception $e) {
+				log_message('error', 'Failed to get table fields in Item_kit::get_info(): ' . $e->getMessage());
+				// Create a basic object with common fields
+				$item_obj->item_kit_id = '';
+				$item_obj->name = '';
+				$item_obj->item_kit_number = '';
+				$item_obj->description = '';
+				$item_obj->kit_discount = '';
+				$item_obj->kit_discount_type = '';
+				$item_obj->price_option = '';
+				$item_obj->print_option = '';
+				$item_obj->item_id = '';
 			}
 
 			return $item_obj;
@@ -192,9 +260,12 @@ class Item_kit extends CI_Model
 			$this->db->like('item_kit_id', str_ireplace('KIT ', '', $search));
 			$this->db->order_by('item_kit_id', 'asc');
 
-			foreach($this->db->get()->result() as $row)
-			{
-				$suggestions[] = array('value' => 'KIT '. $row->item_kit_id, 'label' => 'KIT ' . $row->item_kit_id);
+			$query = $this->db->get();
+			if ($query !== FALSE) {
+				foreach($query->result() as $row)
+				{
+					$suggestions[] = array('value' => 'KIT '. $row->item_kit_id, 'label' => 'KIT ' . $row->item_kit_id);
+				}
 			}
 		}
 		else
@@ -203,9 +274,12 @@ class Item_kit extends CI_Model
 			$this->db->or_like('item_kit_number', $search);
 			$this->db->order_by('name', 'asc');
 
-			foreach($this->db->get()->result() as $row)
-			{
-				$suggestions[] = array('value' => 'KIT ' . $row->item_kit_id, 'label' => $row->name);
+			$query = $this->db->get();
+			if ($query !== FALSE) {
+				foreach($query->result() as $row)
+				{
+					$suggestions[] = array('value' => 'KIT ' . $row->item_kit_id, 'label' => $row->name);
+				}
 			}
 		}
 
@@ -251,7 +325,12 @@ class Item_kit extends CI_Model
 		// get_found_rows case
 		if($count_only == TRUE)
 		{
-			return $this->db->get()->row()->count;
+			$query = $this->db->get();
+			if ($query === FALSE) {
+				log_message('error', 'Database query failed in Item_kit::search() count_only for search: ' . $search);
+				return 0;
+			}
+			return $query->row()->count;
 		}
 
 		$this->db->order_by($sort, $order);
@@ -261,7 +340,12 @@ class Item_kit extends CI_Model
 			$this->db->limit($rows, $limit_from);
 		}
 
-		return $this->db->get();
+		$query = $this->db->get();
+		if ($query === FALSE) {
+			log_message('error', 'Database query failed in Item_kit::search() for search: ' . $search);
+			return FALSE;
+		}
+		return $query;
 	}
 }
 ?>

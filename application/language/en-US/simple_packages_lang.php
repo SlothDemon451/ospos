@@ -1,0 +1,31 @@
+<?php
+
+$lang["simple_packages_basic_information"] = "Package Information";
+$lang["simple_packages_cannot_be_deleted"] = "Could not delete package(s).";
+$lang["simple_packages_confirm_delete"] = "Are you sure you want to delete the selected package(s)?";
+$lang["simple_packages_confirm_restore"] = "Are you sure you want to restore the selected package(s)?";
+$lang["simple_packages_description"] = "Description";
+$lang["simple_packages_error_adding_updating"] = "Error adding/updating package.";
+$lang["simple_packages_info"] = "Package Info";
+$lang["simple_packages_name"] = "Package Name";
+$lang["simple_packages_new"] = "New Package";
+$lang["simple_packages_no_simple_packages_to_display"] = "No packages to display.";
+$lang["simple_packages_none_selected"] = "You have not selected any package(s) to delete.";
+$lang["simple_packages_one_or_multiple"] = "package(s)";
+$lang["simple_packages_package_number"] = "Package Number";
+$lang["simple_packages_successful_adding"] = "You have successfully added package";
+$lang["simple_packages_successful_deleted"] = "You have successfully deleted";
+$lang["simple_packages_successful_updating"] = "You have successfully updated package";
+$lang["simple_packages_update"] = "Update Package";
+$lang["simple_packages_add_item"] = "Add Item";
+$lang["simple_packages_total_price"] = "Total Price";
+$lang["simple_packages_status"] = "Status";
+$lang["simple_packages_active"] = "Active";
+$lang["simple_packages_inactive"] = "Inactive";
+$lang["simple_packages_item_name"] = "Item Name";
+$lang["simple_packages_quantity"] = "Quantity";
+$lang["simple_packages_unit_price"] = "Unit Price";
+$lang["simple_packages_delete_item"] = "Delete Item";
+$lang["simple_packages_title"] = "Simple Packages";
+$lang["simple_packages_confirm_delete"] = "Are you sure you want to delete the selected package(s)?";
+$lang["simple_packages_none_selected"] = "You have not selected any package(s) to delete.";

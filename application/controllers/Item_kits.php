@@ -93,15 +93,62 @@ class Item_kits extends Secure_Controller
 	
 	public function view($item_kit_id = -1)
 	{
-		$info = $this->Item_kit->get_info($item_kit_id);
-
 		if($item_kit_id == -1)
 		{
+			// Create a new item kit object with default values
+			$info = new stdClass();
+			$info->item_id = '';
+			$info->item_kit_id = '';
+			$info->name = '';
+			$info->item_kit_number = '';
+			$info->description = '';
+			$info->kit_discount = '';
+			$info->kit_discount_type = PERCENT;
 			$info->price_option = '0';
 			$info->print_option = PRINT_ALL;
 			$info->kit_item_id = 0;
 			$info->item_number = '';
+			$info->category = '';
+			$info->supplier_id = '';
+			$info->cost_price = '';
+			$info->unit_price = '';
+			$info->reorder_level = '';
+			$info->receiving_quantity = '';
+			$info->pic_filename = '';
+			$info->allow_alt_description = '';
+			$info->is_serialized = '';
+			$info->deleted = '';
+			$info->item_type = '';
+			$info->stock_type = '';
+			$info->item_name = '';
+			$info->item_description = '';
 		}
+		else
+		{
+			$info = $this->Item_kit->get_info($item_kit_id);
+
+			// Check if get_info failed
+			if ($info === FALSE) {
+				$error_message = 'Unable to retrieve item kit information. ';
+				
+				// Check if table exists
+				if (!$this->Item_kit->table_exists()) {
+					$error_message .= 'The item_kits table does not exist in the database. ';
+					$error_message .= 'You may need to run database migrations or check your database configuration.';
+				} else {
+					$error_message .= 'There was a database error. Please check the application logs for more details.';
+				}
+				
+				show_error($error_message);
+				return;
+			}
+
+			// Debug: Log the retrieved info
+			if (ENVIRONMENT === 'development') {
+				log_message('debug', 'Item kit info retrieved for ID ' . $item_kit_id . ': ' . json_encode($info));
+			}
+		}
+
 		foreach(get_object_vars($info) as $property => $value)
 		{
 			$info->$property = $this->xss_clean($value);
@@ -110,14 +157,29 @@ class Item_kits extends Secure_Controller
 		$data['item_kit_info']  = $info;
 
 		$items = array();
-		foreach($this->Item_kit_items->get_info($item_kit_id) as $item_kit_item)
+		if($item_kit_id != -1)
 		{
-			$item['kit_sequence'] = $this->xss_clean($item_kit_item['kit_sequence']);
-			$item['name'] = $this->xss_clean($this->Item->get_info($item_kit_item['item_id'])->name);
-			$item['item_id'] = $this->xss_clean($item_kit_item['item_id']);
-			$item['quantity'] = $this->xss_clean($item_kit_item['quantity']);
+			// Only try to get item kit items for existing kits
+			$item_kit_items_result = $this->Item_kit_items->get_info($item_kit_id);
+			if($item_kit_items_result !== FALSE)
+			{
+				foreach($item_kit_items_result as $item_kit_item)
+				{
+					$item['kit_sequence'] = $this->xss_clean($item_kit_item['kit_sequence']);
+					$item['name'] = $this->xss_clean($this->Item->get_info($item_kit_item['item_id'])->name);
+					$item['item_id'] = $this->xss_clean($item_kit_item['item_id']);
+					$item['quantity'] = $this->xss_clean($item_kit_item['quantity']);
 
-			$items[] = $item;
+					$items[] = $item;
+				}
+			}
+			else
+			{
+				// Log error if get_info fails
+				if (ENVIRONMENT === 'development') {
+					log_message('error', 'Failed to get item kit items for ID: ' . $item_kit_id);
+				}
+			}
 		}
 
 		$data['item_kit_items'] = $items;
