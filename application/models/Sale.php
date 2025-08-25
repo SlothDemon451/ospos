@@ -1586,15 +1586,35 @@ class Sale extends CI_Model
 			}
 			$sale->payment_type = implode(', ', $payment_types);
 
-			// Get sale items and calculate subtotal, tax, total
+			// Get sale items and calculate subtotal, tax, total with discounts
 			$this->db->from('sales_items');
 			$this->db->where('sale_id', $sale->sale_id);
 			$sale_items = $this->db->get()->result();
 			$sale->subtotal = 0;
 			$sale->tax = 0;
 			$sale->total = 0;
+			$sale->total_discount = 0;
+			
 			foreach ($sale_items as $item) {
-				$sale->subtotal += $item->item_unit_price * $item->quantity_purchased;
+				// Calculate item total with discount
+				$item_total_before_discount = $item->item_unit_price * $item->quantity_purchased;
+				$item_total_after_discount = $item_total_before_discount;
+				
+				// Apply discount if exists
+				if ($item->discount > 0) {
+					if ($item->discount_type == PERCENT) {
+						// Percentage discount
+						$discount_amount = $item_total_before_discount * ($item->discount / 100);
+						$item_total_after_discount = $item_total_before_discount - $discount_amount;
+						$sale->total_discount += $discount_amount;
+					} else {
+						// Fixed amount discount
+						$discount_amount = $item->discount * $item->quantity_purchased;
+						$item_total_after_discount = $item_total_before_discount - $discount_amount;
+						$sale->total_discount += $discount_amount;
+					}
+				}
+				
 				// Get tax for each item
 				$this->db->select_sum('item_tax_amount');
 				$this->db->from('sales_items_taxes');
@@ -1603,7 +1623,11 @@ class Sale extends CI_Model
 				$this->db->where('line', $item->line);
 				$tax_row = $this->db->get()->row();
 				$sale->tax += $tax_row && $tax_row->item_tax_amount ? $tax_row->item_tax_amount : 0;
+				
+				// Add to subtotal (after discount)
+				$sale->subtotal += $item_total_after_discount;
 			}
+			
 			$sale->total = $sale->subtotal + $sale->tax;
 			$sale->amount_due = $sale->total - $sale->amount_tendered;
 			$sale->change_due = $sale->amount_tendered > $sale->total ? $sale->amount_tendered - $sale->total : 0;
@@ -1645,15 +1669,35 @@ class Sale extends CI_Model
 			}
 			$sale->payment_type = implode(', ', $payment_types);
 
-			// Get sale items and calculate subtotal, tax, total
+			// Get sale items and calculate subtotal, tax, total with discounts
 			$this->db->from('sales_items');
 			$this->db->where('sale_id', $sale->sale_id);
 			$sale_items = $this->db->get()->result();
 			$sale->subtotal = 0;
 			$sale->tax = 0;
 			$sale->total = 0;
+			$sale->total_discount = 0;
+			
 			foreach ($sale_items as $item) {
-				$sale->subtotal += $item->item_unit_price * $item->quantity_purchased;
+				// Calculate item total with discount
+				$item_total_before_discount = $item->item_unit_price * $item->quantity_purchased;
+				$item_total_after_discount = $item_total_before_discount;
+				
+				// Apply discount if exists
+				if ($item->discount > 0) {
+					if ($item->discount_type == PERCENT) {
+						// Percentage discount
+						$discount_amount = $item_total_before_discount * ($item->discount / 100);
+						$item_total_after_discount = $item_total_before_discount - $discount_amount;
+						$sale->total_discount += $discount_amount;
+					} else {
+						// Fixed amount discount
+						$discount_amount = $item->discount * $item->quantity_purchased;
+						$item_total_after_discount = $item_total_before_discount - $discount_amount;
+						$sale->total_discount += $discount_amount;
+					}
+				}
+				
 				// Get tax for each item
 				$this->db->select_sum('item_tax_amount');
 				$this->db->from('sales_items_taxes');
@@ -1662,7 +1706,11 @@ class Sale extends CI_Model
 				$this->db->where('line', $item->line);
 				$tax_row = $this->db->get()->row();
 				$sale->tax += $tax_row && $tax_row->item_tax_amount ? $tax_row->item_tax_amount : 0;
+				
+				// Add to subtotal (after discount)
+				$sale->subtotal += $item_total_after_discount;
 			}
+			
 			$sale->total = $sale->subtotal + $sale->tax;
 			$sale->amount_due = $sale->total - $sale->amount_tendered;
 			$sale->change_due = $sale->amount_tendered > $sale->total ? $sale->amount_tendered - $sale->total : 0;
@@ -1690,42 +1738,69 @@ class Sale extends CI_Model
 			$subtotal = 0;
 			$tax = 0;
 			$total = 0;
+			$total_discount = 0;
+			
 			foreach ($sale_items as $item) {
+				// Calculate item total with discount
+				$item_total_before_discount = $item->item_unit_price * $item->quantity_purchased;
+				$item_total_after_discount = $item_total_before_discount;
+				
+				// Apply discount if exists
+				if ($item->discount > 0) {
+					if ($item->discount_type == PERCENT) {
+						// Percentage discount
+						$discount_amount = $item_total_before_discount * ($item->discount / 100);
+						$item_total_after_discount = $item_total_before_discount - $discount_amount;
+						$total_discount += $discount_amount;
+					} else {
+						// Fixed amount discount
+						$discount_amount = $item->discount * $item->quantity_purchased;
+						$item_total_after_discount = $item_total_before_discount - $discount_amount;
+						$total_discount += $discount_amount;
+					}
+				}
+				
 				// Get tax info for this item/line
 				$this->db->from('sales_items_taxes');
 				$this->db->where('sale_id', $sale->sale_id);
 				$this->db->where('item_id', $item->item_id);
 				$this->db->where('line', $item->line);
 				$tax_row = $this->db->get()->row();
+				
 				if ($tax_row && isset($tax_row->tax_type) && $tax_row->tax_type == 1) {
 					// Fixed tax: price is tax-inclusive
-					$base_price = ($item->item_unit_price * $item->quantity_purchased) / (1 + ($tax_row->percent / 100));
-					$item_tax = ($item->item_unit_price * $item->quantity_purchased) - $base_price;
+					$base_price = $item_total_after_discount / (1 + ($tax_row->percent / 100));
+					$item_tax = $item_total_after_discount - $base_price;
 					$subtotal += $base_price;
 					$tax += $item_tax;
-					$total += $item->item_unit_price * $item->quantity_purchased;
+					$total += $item_total_after_discount;
 				} else {
 					// Percentage tax: price is tax-exclusive
-					$subtotal += $item->item_unit_price * $item->quantity_purchased;
+					$subtotal += $item_total_after_discount;
 					$item_tax = $tax_row && isset($tax_row->item_tax_amount) ? $tax_row->item_tax_amount : 0;
 					$tax += $item_tax;
-					$total += ($item->item_unit_price * $item->quantity_purchased) + $item_tax;
+					$total += $item_total_after_discount + $item_tax;
 				}
 			}
+			
 			// Get payments
 			$this->db->select_sum('payment_amount');
 			$this->db->from('sales_payments');
 			$this->db->where('sale_id', $sale->sale_id);
 			$amount_tendered = $this->db->get()->row()->payment_amount;
 			$amount_tendered = $amount_tendered ? $amount_tendered : 0;
-			$change_due = $amount_tendered - $total;
-			if ($change_due < 0) {
+			
+			// Calculate amount due after discounts
+			$amount_due = $total - $amount_tendered;
+			
+			if ($amount_due > 0) {
 				// Add to unpaid sales
 				$sale->subtotal = $subtotal;
 				$sale->tax = $tax;
 				$sale->total = $total;
+				$sale->total_discount = $total_discount;
 				$sale->amount_tendered = $amount_tendered;
-				$sale->change_due = $change_due;
+				$sale->amount_due = $amount_due;
 				$unpaid_sales[] = $sale;
 			}
 		}

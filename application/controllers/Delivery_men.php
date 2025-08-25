@@ -287,6 +287,79 @@ class Delivery_men extends Persons
 		$this->load->view('sales/print_all_receipts', $data);
 	}
 
+	public function print_all_items($delivery_man_id)
+	{
+		$this->load->model('Sale');
+		$this->load->model('Employee');
+
+		// Date filter - default to today if not provided
+		$start_date = $this->input->get('start_date');
+		$end_date = $this->input->get('end_date');
+		if (empty($start_date) || empty($end_date))
+		{
+			$today = date('Y-m-d');
+			$start_date = $today;
+			$end_date = $today;
+		}
+
+		// Get delivery man info
+		$delivery_man_info = $this->Employee->get_info($delivery_man_id);
+		
+		// Get all sales for this delivery man
+		$sales = $this->Sale->get_sales_by_delivery_man($delivery_man_id, $start_date, $end_date);
+		
+		// Consolidate all items from all sales
+		$consolidated_items = array();
+		$total_items = 0;
+		$total_sales = count($sales);
+		
+		foreach ($sales as $sale) {
+			// Get items for this sale with proper item names from items table
+			$sale_items = $this->Sale->get_sale_items_ordered($sale->sale_id)->result();
+			
+			foreach ($sale_items as $item) {
+				// Use item name from items table, fallback to description if name is empty
+				$item_name = !empty($item->name) ? $item->name : ($item->description ?: 'Item #' . $item->item_id);
+				
+				// Create a unique key that includes item_id, price, and discount
+				$item_key = $item->item_id . '_' . $item->item_unit_price . '_' . $item->discount . '_' . $item->discount_type;
+				
+				if (!isset($consolidated_items[$item_key])) {
+					$consolidated_items[$item_key] = array(
+						'item_id' => $item->item_id,
+						'name' => $item_name,
+						'sales' => array()
+					);
+				}
+				
+				$consolidated_items[$item_key]['sales'][] = array(
+					'sale_id' => $sale->sale_id,
+					'customer_name' => $sale->customer_name,
+					'quantity' => $item->quantity_purchased,
+					'line' => $item->line
+				);
+				
+				$total_items += $item->quantity_purchased;
+			}
+		}
+		
+		// Sort items by name for better organization
+		usort($consolidated_items, function($a, $b) {
+			return strcmp($a['name'], $b['name']);
+		});
+
+		$data = array(
+			'delivery_man_info' => $delivery_man_info,
+			'consolidated_items' => $consolidated_items,
+			'total_items' => $total_items,
+			'total_sales' => $total_sales,
+			'start_date' => $start_date,
+			'end_date' => $end_date
+		);
+
+		$this->load->view('delivery_men/print_all_items', $data);
+	}
+
 
 }
 ?>

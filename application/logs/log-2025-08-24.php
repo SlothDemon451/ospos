@@ -2108,3 +2108,82 @@ ERROR - 2025-08-24 19:49:41 --> Customer::get_stats query failed for customer_id
 
 ERROR - 2025-08-24 19:58:15 --> Severity: Notice --> Undefined offset: 1 C:\laragon\www\ospos\application\libraries\Sale_lib.php 1064
 ERROR - 2025-08-24 19:58:15 --> Severity: Notice --> Trying to access array offset on value of type null C:\laragon\www\ospos\application\libraries\Sale_lib.php 1064
+ERROR - 2025-08-24 19:59:43 --> Query error: Unknown column 'sales_items_temp.avg_discount' in 'field list' - Invalid query: SELECT SUM(sales_payments.payment_amount - sales_payments.cash_refund) AS total, MIN(sales_payments.payment_amount - sales_payments.cash_refund) AS min, MAX(sales_payments.payment_amount - sales_payments.cash_refund) AS max, AVG(sales_payments.payment_amount - sales_payments.cash_refund) AS average, ROUND(AVG(sales_items_temp.avg_discount), 2) AS avg_discount, ROUND(SUM(sales_items_temp.quantity), 0) AS quantity
+FROM `ospos_sales`
+JOIN `ospos_sales_payments` AS `sales_payments` ON `ospos_sales`.`sale_id` = `sales_payments`.`sale_id`
+JOIN `ospos_sales_items_temp` AS `sales_items_temp` ON `ospos_sales`.`sale_id` = `sales_items_temp`.`sale_id`
+WHERE `ospos_sales`.`customer_id` = '4'
+AND `ospos_sales`.`sale_status` = 0
+GROUP BY `ospos_sales`.`customer_id`
+ERROR - 2025-08-24 19:59:43 --> Customer::get_stats query failed for customer_id 4 - DB error: Array
+(
+    [code] => 1054
+    [message] => Unknown column 'sales_items_temp.avg_discount' in 'field list'
+)
+
+ERROR - 2025-08-24 20:01:14 --> Query error: Unknown column 'sales_items_temp.avg_discount' in 'field list' - Invalid query: SELECT SUM(sales_payments.payment_amount - sales_payments.cash_refund) AS total, MIN(sales_payments.payment_amount - sales_payments.cash_refund) AS min, MAX(sales_payments.payment_amount - sales_payments.cash_refund) AS max, AVG(sales_payments.payment_amount - sales_payments.cash_refund) AS average, ROUND(AVG(sales_items_temp.avg_discount), 2) AS avg_discount, ROUND(SUM(sales_items_temp.quantity), 0) AS quantity
+FROM `ospos_sales`
+JOIN `ospos_sales_payments` AS `sales_payments` ON `ospos_sales`.`sale_id` = `sales_payments`.`sale_id`
+JOIN `ospos_sales_items_temp` AS `sales_items_temp` ON `ospos_sales`.`sale_id` = `sales_items_temp`.`sale_id`
+WHERE `ospos_sales`.`customer_id` = '4'
+AND `ospos_sales`.`sale_status` = 0
+GROUP BY `ospos_sales`.`customer_id`
+ERROR - 2025-08-24 20:01:14 --> Customer::get_stats query failed for customer_id 4 - DB error: Array
+(
+    [code] => 1054
+    [message] => Unknown column 'sales_items_temp.avg_discount' in 'field list'
+)
+
+ERROR - 2025-08-24 20:02:01 --> Severity: Notice --> Undefined index: payment_time C:\laragon\www\ospos\application\views\sales\invoice.php 218
+ERROR - 2025-08-24 20:02:01 --> Query error: Unknown column 'sales_items_temp.avg_discount' in 'field list' - Invalid query: SELECT SUM(sales_payments.payment_amount - sales_payments.cash_refund) AS total, MIN(sales_payments.payment_amount - sales_payments.cash_refund) AS min, MAX(sales_payments.payment_amount - sales_payments.cash_refund) AS max, AVG(sales_payments.payment_amount - sales_payments.cash_refund) AS average, ROUND(AVG(sales_items_temp.avg_discount), 2) AS avg_discount, ROUND(SUM(sales_items_temp.quantity), 0) AS quantity
+FROM `ospos_sales`
+JOIN `ospos_sales_payments` AS `sales_payments` ON `ospos_sales`.`sale_id` = `sales_payments`.`sale_id`
+JOIN `ospos_sales_items_temp` AS `sales_items_temp` ON `ospos_sales`.`sale_id` = `sales_items_temp`.`sale_id`
+WHERE `ospos_sales`.`customer_id` = '4'
+AND `ospos_sales`.`sale_status` = 0
+GROUP BY `ospos_sales`.`customer_id`
+ERROR - 2025-08-24 20:02:01 --> Customer::get_stats query failed for customer_id 4 - DB error: Array
+(
+    [code] => 1054
+    [message] => Unknown column 'sales_items_temp.avg_discount' in 'field list'
+)
+
+ERROR - 2025-08-24 20:02:34 --> Query error: Unknown column 'sales_items_temp.avg_discount' in 'field list' - Invalid query: SELECT SUM(sales_payments.payment_amount - sales_payments.cash_refund) AS total, MIN(sales_payments.payment_amount - sales_payments.cash_refund) AS min, MAX(sales_payments.payment_amount - sales_payments.cash_refund) AS max, AVG(sales_payments.payment_amount - sales_payments.cash_refund) AS average, ROUND(AVG(sales_items_temp.avg_discount), 2) AS avg_discount, ROUND(SUM(sales_items_temp.quantity), 0) AS quantity
+FROM `ospos_sales`
+JOIN `ospos_sales_payments` AS `sales_payments` ON `ospos_sales`.`sale_id` = `sales_payments`.`sale_id`
+JOIN `ospos_sales_items_temp` AS `sales_items_temp` ON `ospos_sales`.`sale_id` = `sales_items_temp`.`sale_id`
+WHERE `ospos_sales`.`customer_id` = '4'
+AND `ospos_sales`.`sale_status` = 0
+GROUP BY `ospos_sales`.`customer_id`
+ERROR - 2025-08-24 20:02:34 --> Customer::get_stats query failed for customer_id 4 - DB error: Array
+(
+    [code] => 1054
+    [message] => Unknown column 'sales_items_temp.avg_discount' in 'field list'
+)
+
+ERROR - 2025-08-24 20:03:00 --> Query error: Unknown column 'sales_items_temp.avg_discount' in 'field list' - Invalid query: SELECT SUM(sales_payments.payment_amount - sales_payments.cash_refund) AS total, MIN(sales_payments.payment_amount - sales_payments.cash_refund) AS min, MAX(sales_payments.payment_amount - sales_payments.cash_refund) AS max, AVG(sales_payments.payment_amount - sales_payments.cash_refund) AS average, ROUND(AVG(sales_items_temp.avg_discount), 2) AS avg_discount, ROUND(SUM(sales_items_temp.quantity), 0) AS quantity
+FROM `ospos_sales`
+JOIN `ospos_sales_payments` AS `sales_payments` ON `ospos_sales`.`sale_id` = `sales_payments`.`sale_id`
+JOIN `ospos_sales_items_temp` AS `sales_items_temp` ON `ospos_sales`.`sale_id` = `sales_items_temp`.`sale_id`
+WHERE `ospos_sales`.`customer_id` = '4'
+AND `ospos_sales`.`sale_status` = 0
+GROUP BY `ospos_sales`.`customer_id`
+ERROR - 2025-08-24 20:03:00 --> Customer::get_stats query failed for customer_id 4 - DB error: Array
+(
+    [code] => 1054
+    [message] => Unknown column 'sales_items_temp.avg_discount' in 'field list'
+)
+
+ERROR - 2025-08-24 20:03:06 --> Query error: Unknown column 'sales_items_temp.avg_discount' in 'field list' - Invalid query: SELECT SUM(sales_payments.payment_amount - sales_payments.cash_refund) AS total, MIN(sales_payments.payment_amount - sales_payments.cash_refund) AS min, MAX(sales_payments.payment_amount - sales_payments.cash_refund) AS max, AVG(sales_payments.payment_amount - sales_payments.cash_refund) AS average, ROUND(AVG(sales_items_temp.avg_discount), 2) AS avg_discount, ROUND(SUM(sales_items_temp.quantity), 0) AS quantity
+FROM `ospos_sales`
+JOIN `ospos_sales_payments` AS `sales_payments` ON `ospos_sales`.`sale_id` = `sales_payments`.`sale_id`
+JOIN `ospos_sales_items_temp` AS `sales_items_temp` ON `ospos_sales`.`sale_id` = `sales_items_temp`.`sale_id`
+WHERE `ospos_sales`.`customer_id` = '4'
+AND `ospos_sales`.`sale_status` = 0
+GROUP BY `ospos_sales`.`customer_id`
+ERROR - 2025-08-24 20:03:06 --> Customer::get_stats query failed for customer_id 4 - DB error: Array
+(
+    [code] => 1054
+    [message] => Unknown column 'sales_items_temp.avg_discount' in 'field list'
+)
+

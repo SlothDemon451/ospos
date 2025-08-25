@@ -11,39 +11,41 @@
             <?php if (empty($allocations)): ?>
                 <div class="alert alert-info">No outstanding dues were found for this customer. No payment was applied.</div>
             <?php else: ?>
-                <table class="table table-bordered table-striped">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Sale ID</th>
-                            <th>Paid</th>
-                            <th>Due Before</th>
-                            <th>Due After</th>
-                            <th>Receipt</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($allocations as $alloc): ?>
+                <h5>Payment Allocations:</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
                             <tr>
-                                <td><?php echo htmlspecialchars($alloc['sale_id']); ?></td>
-                                <td><?php echo to_currency($alloc['paid']); ?></td>
-                                <td><?php echo to_currency($alloc['due_before']); ?></td>
-                                <td><?php echo to_currency($alloc['due_after']); ?></td>
-                                <td>
-                                    <a href="<?php echo site_url('sales/receipt/' . $alloc['sale_id']); ?>" target="_blank" class="btn btn-sm btn-primary">
-                                        <span class="glyphicon glyphicon-print"></span> Print Receipt
-                                    </a>
-                                </td>
+                                <th>Sale ID</th>
+                                <th>Amount Paid</th>
+                                <th>Due Before</th>
+                                <th>Due After</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($allocations as $allocation): ?>
+                                <tr>
+                                    <td><?php echo $allocation['sale_id']; ?></td>
+                                    <td><?php echo to_currency($allocation['paid']); ?></td>
+                                    <td><?php echo to_currency($allocation['due_before']); ?></td>
+                                    <td><?php echo to_currency($allocation['due_after']); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                
                 <?php if ($remaining > 0): ?>
-                    <div class="alert alert-warning">Unallocated amount remaining: <?php echo to_currency($remaining); ?></div>
+                    <div class="alert alert-warning">
+                        <strong>Unused Payment Amount:</strong> <?php echo to_currency($remaining); ?>
+                        <br><small>This amount was not applied as all outstanding dues have been paid.</small>
+                    </div>
                 <?php endif; ?>
             <?php endif; ?>
-
-            <div class="mt-4 d-grid gap-2">
-                <a href="<?php echo site_url('customers'); ?>" class="btn btn-primary btn-block">Back to Customers</a>
+            
+            <div class="mt-4">
+                <a href="<?php echo site_url('customers/view/' . $customer->person_id); ?>" class="btn btn-secondary">Back to Customer</a>
+                <a href="<?php echo site_url('customers/apply_payment/' . $customer->person_id); ?>" class="btn btn-primary">Apply Another Payment</a>
             </div>
         </div>
     </div>

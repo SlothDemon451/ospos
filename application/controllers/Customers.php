@@ -534,7 +534,7 @@ class Customers extends Persons
 			$allocations = [];
 
 			foreach ($unpaid_sales as $sale) {
-				$due = $sale->total - $sale->amount_tendered;
+				$due = $sale->amount_due; // Use the pre-calculated amount_due
 				if ($due <= 0) continue;
 				$pay = min($due, $remaining);
 				if ($pay > 0) {
@@ -551,7 +551,8 @@ class Customers extends Persons
 						'sale_id' => $sale->sale_id,
 						'paid' => $pay,
 						'due_before' => $due,
-						'due_after' => $due - $pay
+						'due_after' => $due - $pay,
+						'total_discount' => $sale->total_discount
 					];
 					$remaining -= $pay;
 					if ($remaining <= 0) break;
@@ -569,9 +570,20 @@ class Customers extends Persons
 			return;
 		}
 
-		// Show payment form
+		// Show payment form - calculate outstanding balance and discounts
+		$unpaid_sales = $this->Sale->get_unpaid_sales($customer_id);
+		$outstanding_balance = 0;
+		$total_discount = 0;
+		
+		foreach ($unpaid_sales as $sale) {
+			$outstanding_balance += $sale->amount_due;
+			$total_discount += $sale->total_discount;
+		}
+		
 		$data = [
-			'customer' => $customer
+			'customer' => $customer,
+			'outstanding_balance' => $outstanding_balance,
+			'total_discount' => $total_discount
 		];
 		$this->load->view('customers/payment_form', $data);
 	}

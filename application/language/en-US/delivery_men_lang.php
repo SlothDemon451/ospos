@@ -20,4 +20,20 @@ $lang['delivery_men_password_minlength'] = 'Password must be at least 6 characte
 $lang['delivery_men_repeat_password_required'] = 'Please repeat the password';
 $lang['delivery_men_password_mismatch'] = 'Passwords do not match';
 
+// New language keys for print all items functionality
+$lang['delivery_men_print_all_items'] = 'Print All Items';
+$lang['common_back'] = 'Back to Delivery Men';
+$lang['delivery_men_all_items'] = 'All Items';
+$lang['delivery_men_product_summary'] = 'Product Quantity Summary';
+$lang['common_summary'] = 'Summary';
+$lang['delivery_men_items_summary'] = 'Items Summary';
+$lang['delivery_men_consolidated_items'] = 'Consolidated Items List';
+$lang['delivery_men_customer_distribution'] = 'Customer Distribution';
+$lang['delivery_men_detailed_items_by_sale'] = 'Detailed Items by Sale';
+$lang['delivery_men_total_unique_items'] = 'Total Unique Items';
+$lang['delivery_men_total_quantity'] = 'Total Quantity';
+$lang['delivery_men_total_sales'] = 'Total Sales';
+$lang['delivery_men_date_range'] = 'Date Range';
+$lang['delivery_men_no_items_found'] = 'No items found for the selected date range.';
+
 ?>

@@ -94,6 +94,9 @@ $(document).ready(function()
         <a class="btn btn-primary btn-sm" style="margin-left:10px;" href="<?php echo site_url('delivery_men/print_receipts/'.$delivery_man_info->person_id.'?start_date='.(isset($start_date)?$start_date:date('Y-m-d')).'&end_date='.(isset($end_date)?$end_date:date('Y-m-d'))); ?>" target="_blank">
             <span class="glyphicon glyphicon-print"></span> Print All Receipts
         </a>
+        <a class="btn btn-success btn-sm" style="margin-left:10px;" href="<?php echo site_url('delivery_men/print_all_items/'.$delivery_man_info->person_id.'?start_date='.(isset($start_date)?$start_date:date('Y-m-d')).'&end_date='.(isset($end_date)?$end_date:date('Y-m-d'))); ?>" target="_blank">
+            <span class="glyphicon glyphicon-list"></span> <?php echo $this->lang->line('delivery_men_print_all_items'); ?>
+        </a>
         <?php endif; ?>
     </form>
     <!-- Search bar only -->
