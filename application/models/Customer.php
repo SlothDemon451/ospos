@@ -169,13 +169,14 @@ class Customer extends Person
 			$stat->quantity = 0;
 		}
 
-		// Calculate amount_due: sum of negative change_due for all completed sales with outstanding balance
+		// Calculate amount_due: sum of (total_amount - amount_tendered) for all sales where amount_tendered < total_amount
 		$this->load->model('Sale');
 		$unpaid_sales = $this->Sale->get_unpaid_sales($customer_id);
 		$amount_due = 0;
 		foreach ($unpaid_sales as $sale) {
-			if (isset($sale->change_due) && $sale->change_due < 0) {
-				$amount_due += abs($sale->change_due); // sum the negative change_due as positive due
+			// Only add to amount_due if amount_tendered < total_amount
+			if (isset($sale->amount_tendered) && isset($sale->total) && $sale->amount_tendered < $sale->total) {
+				$amount_due += ($sale->total - $sale->amount_tendered);
 			}
 		}
 		$stat->amount_due = $amount_due;

@@ -5,6 +5,16 @@
   .pagebreak { page-break-before: always; }
 }
 .receipt-wrapper { margin-bottom: 20px; }
+.suspended-header-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+.suspended-header-table td, .suspended-header-table th { border: 1px solid #333; padding: 4px 8px; vertical-align: top; }
+.suspended-header-table th { background: #f4f4f4; text-align: left; }
+.suspended-info-block { font-size: 13px; line-height: 1.4; margin-bottom: 6px; }
+.suspended-items-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.suspended-items-table th, .suspended-items-table td { border: 1px solid #333; padding: 6px 8px; }
+.suspended-items-table th { background: #f4f4f4; }
+.suspended-total-row td { font-size: 1.5em; font-weight: bold; text-align: right; border-top: 2px solid #000; }
+.suspended-footer-note { margin-top: 18px; font-size: 13px; }
+.suspended-employee { margin-top: 12px; font-size: 13px; }
 </style>
 
 <div class="container-fluid">
@@ -15,6 +25,11 @@
     <div id="batch_container"></div>
     <div id="progress" class="print_hide" style="margin-top:10px;">
       Loading <span id="loaded">0</span> / <span id="total">0</span> receipts...
+    </div>
+    <div id="print_controls" class="print_hide" style="margin-top:20px; text-align:center; display:none;">
+      <button type="button" class="btn btn-primary btn-lg" onclick="window.print()">
+        <span class="glyphicon glyphicon-print"></span> Print All Receipts
+      </button>
     </div>
     <script>
     (function(){
@@ -38,13 +53,15 @@
 
       function loadNext(index){
         if(index >= total){
-          // All loaded, trigger print
-          window.print();
+          // All loaded, show print button instead of auto-printing
+          document.getElementById('progress').style.display = 'none';
+          document.getElementById('print_controls').style.display = 'block';
           return;
         }
         var sid = saleIds[index];
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', '<?php echo site_url('sales/receipt/'); ?>' + sid + '?embed=1', true);
+        // Use a dedicated batch receipt endpoint that returns only receipt content
+        xhr.open('GET', '<?php echo site_url('sales/batch_receipt/'); ?>' + sid + '?embed=1&tax=0', true);
         xhr.onreadystatechange = function(){
           if(xhr.readyState === 4){
             appendReceipt(xhr.status === 200 ? xhr.responseText : null, sid, index === total - 1);

@@ -477,8 +477,14 @@ if(isset($success))
 			?>
 		<?php echo form_close(); ?>
 
+		<style>
+			.bootstrap-select>.dropdown-toggle.bs-placeholder {
+				color: #fff !important;
+			}
+		</style>
+
 		<!-- Delivery Man Section: Always visible, styled like customer -->
-		<div class="form-group" id="delivery_man_section" style="margin-top: 10px; margin-bottom: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
+		<div class="form-group" id="delivery_man_section" style="margin-top: 10px; margin-bottom: 15px; border-top: 1px solid #000; padding-top: 10px;">
 			<label for="delivery_man_search" class="control-label">Delivery Man</label>
 			<?php if(!isset($delivery_man_id) || !$delivery_man_id): ?>
 				<form method="post" action="<?php echo site_url('sales/set_delivery_man'); ?>" id="delivery_man_form" style="margin-bottom:0;">

@@ -116,6 +116,27 @@ document.addEventListener('DOMContentLoaded', function() {
 		</tr>
 	</table>
 
+	<!-- Previous Unpaid Amount Section -->
+	<?php if(isset($customer_id) && !empty($customer_id)): ?>
+		<?php
+		// Get customer's total unpaid amount from all previous invoices
+		$CI =& get_instance();
+		$CI->load->model('Customer');
+		$customer_stats = $CI->Customer->get_stats($customer_id);
+		$previous_unpaid_amount = isset($customer_stats->amount_due) ? $customer_stats->amount_due : 0;
+		?>
+		<?php if($previous_unpaid_amount > 0): ?>
+		<div style="margin: 15px 0; padding: 10px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
+			<div style="text-align: center; font-weight: bold; color: #856404; font-size: 14px;">
+				⚠️ Monto Pendiente Anterior: <?php echo to_currency($previous_unpaid_amount); ?>
+			</div>
+			<div style="text-align: center; font-size: 12px; color: #856404; margin-top: 5px;">
+				Este monto representa el saldo pendiente de facturas anteriores
+			</div>
+		</div>
+		<?php endif; ?>
+	<?php endif; ?>
+
 	<div class="suspended-employee">
 		Empleado: <?php echo htmlspecialchars($employee); ?>
 		<?php if (!empty($delivery_man_name)) { ?>

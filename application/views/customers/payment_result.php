@@ -44,7 +44,7 @@
             <?php endif; ?>
             
             <div class="mt-4">
-                <a href="<?php echo site_url('customers/view/' . $customer->person_id); ?>" class="btn btn-secondary">Back to Customer</a>
+                <a href="<?php echo site_url('customers/sales/' . $customer->person_id); ?>" class="btn btn-primary">Back to Customer</a>
                 <a href="<?php echo site_url('customers/apply_payment/' . $customer->person_id); ?>" class="btn btn-primary">Apply Another Payment</a>
             </div>
         </div>

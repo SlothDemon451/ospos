@@ -1287,20 +1287,40 @@ class Sales extends Secure_Controller
 			$data['amount_due'] = $totals['amount_due'];
 		}
 
-		// Debug: Log the values to see what's happening
-		log_message('debug', '=== RECEIPT DEBUG ===');
-		log_message('debug', 'Sale ID: ' . $sale_id);
-		log_message('debug', 'Totals array: ' . json_encode($totals));
-		log_message('debug', 'Payments total: ' . $data['payments_total']);
-		log_message('debug', 'Sale total: ' . $data['total']);
-		log_message('debug', 'Amount due: ' . $data['amount_due']);
-		log_message('debug', 'Cash mode: ' . ($data['cash_mode'] ? 'true' : 'false'));
-
 		$data['amount_change'] = $data['amount_due'] * -1;
 
 		$employee_info = $this->Employee->get_info($this->sale_lib->get_employee());
 		$data['employee'] = $employee_info->first_name . ' ' . mb_substr($employee_info->last_name, 0, 1);
-		$this->_load_customer_data($this->sale_lib->get_customer(), $data, TRUE);
+		
+		// Load customer data from the actual sale record, not from session
+		$customer_id = $sale_info['customer_id'];
+		$customer_info = $this->_load_customer_data($customer_id, $data, TRUE);
+		
+		// Ensure all customer variables are set for invoice view
+		if($customer_id != -1 && $customer_info) {
+			$data['customer_id'] = $customer_id;
+			$data['customer'] = isset($data['customer']) ? $data['customer'] : '';
+			$data['first_name'] = isset($data['first_name']) ? $data['first_name'] : '';
+			$data['last_name'] = isset($data['last_name']) ? $data['last_name'] : '';
+			$data['customer_address'] = isset($data['customer_address']) ? $data['customer_address'] : '';
+			$data['customer_location'] = isset($data['customer_location']) ? $data['customer_location'] : '';
+			$data['customer_phone'] = isset($data['customer_phone']) ? $data['customer_phone'] : '';
+			$data['customer_email'] = isset($data['customer_email']) ? $data['customer_email'] : '';
+			$data['customer_account_number'] = isset($data['customer_account_number']) ? $data['customer_account_number'] : '';
+			$data['tax_id'] = isset($data['tax_id']) ? $data['tax_id'] : '';
+		} else {
+			// Set default values if no customer
+			$data['customer_id'] = -1;
+			$data['customer'] = '';
+			$data['first_name'] = '';
+			$data['last_name'] = '';
+			$data['customer_address'] = '';
+			$data['customer_location'] = '';
+			$data['customer_phone'] = '';
+			$data['customer_email'] = '';
+			$data['customer_account_number'] = '';
+			$data['tax_id'] = '';
+		}
 
 		$data['sale_id_num'] = $sale_id;
 		$data['sale_id'] = 'Ven ' . $sale_id;
@@ -2078,6 +2098,34 @@ class Sales extends Secure_Controller
 		$delivery_man_id = $this->input->post('delivery_man_id');
 		$this->sale_lib->set_delivery_man_id($delivery_man_id);
 		$this->_reload();
+	}
+
+	// New method for batch receipt printing - returns only receipt content without headers
+	public function batch_receipt($sale_id)
+	{
+		$data = $this->_load_sale_data($sale_id);
+		$data['is_suspended'] = TRUE;
+		$data['embed'] = TRUE; // Force embed mode to avoid headers
+		
+		// Add delivery man details for suspended receipt
+		if (!empty($data['delivery_man_id']) && !empty($data['employees'])) {
+			foreach ($data['employees'] as $employee) {
+				if ($employee['person_id'] == $data['delivery_man_id']) {
+					$data['delivery_man_name'] = $employee['first_name'] . ' ' . $employee['last_name'];
+					$data['delivery_man_phone'] = $employee['phone_number'];
+					$data['delivery_man_email'] = $employee['email'];
+					break;
+				}
+			}
+		}
+
+		// Choose template based on tax parameter
+		$show_tax = $this->input->get('tax');
+		if ($show_tax === '0') {
+			$this->load->view('sales/receipt_suspended_no_tax', $data);
+		} else {
+			$this->load->view('sales/receipt_suspended', $data);
+		}
 	}
 }
 ?>
