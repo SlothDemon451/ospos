@@ -1,34 +1,66 @@
-/* Custom Layout CSS - Increase Content Width */
+/* Custom Layout CSS - Increase Content Width to 100% */
 /* This file overrides Bootstrap's default container widths to provide more space */
 
-/* Increase container width for all screen sizes */
+/* Increase container width for all screen sizes to 100% with higher specificity */
+body .container,
+body .container-fluid,
+body .container-sm,
+body .container-md,
+body .container-lg,
+body .container-xl,
+body .container-xxl {
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
+/* Specific media query overrides with higher specificity */
 @media (min-width: 576px) {
-    .container {
-        max-width: 700px !important; /* Default: 540px */
+    body .container, 
+    body .container-sm {
+        max-width: 100% !important;
+        width: 100% !important;
     }
 }
 
 @media (min-width: 768px) {
-    .container {
-        max-width: 900px !important; /* Default: 720px */
+    body .container, 
+    body .container-sm, 
+    body .container-md {
+        max-width: 100% !important;
+        width: 100% !important;
     }
 }
 
 @media (min-width: 992px) {
-    .container {
-        max-width: 1200px !important; /* Default: 960px */
+    body .container, 
+    body .container-sm, 
+    body .container-md, 
+    body .container-lg {
+        max-width: 100% !important;
+        width: 100% !important;
     }
 }
 
 @media (min-width: 1200px) {
-    .container {
-        max-width: 1400px !important; /* Default: 1140px */
+    body .container, 
+    body .container-sm, 
+    body .container-md, 
+    body .container-lg, 
+    body .container-xl {
+        max-width: 100% !important;
+        width: 100% !important;
     }
 }
 
 @media (min-width: 1400px) {
-    .container {
-        max-width: 1600px !important; /* Default: 1320px */
+    body .container, 
+    body .container-sm, 
+    body .container-md, 
+    body .container-lg, 
+    body .container-xl, 
+    body .container-xxl {
+        max-width: 100% !important;
+        width: 100% !important;
     }
 }
 
@@ -68,24 +100,4 @@
     .modal-dialog {
         max-width: 1000px;
     }
-}
-
-/* Improve card and panel layouts */
-.card, .panel {
-    margin-bottom: 20px;
-}
-
-/* Better spacing for content areas */
-.content-wrapper {
-    padding: 20px 0;
-}
-
-/* Improve navigation spacing */
-.navbar-nav > li > a {
-    padding: 15px 20px;
-}
-
-/* Better spacing for main content */
-.main-content {
-    padding: 20px 0;
 }

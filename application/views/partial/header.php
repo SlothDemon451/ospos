@@ -31,6 +31,7 @@
 		<link rel="stylesheet" type="text/css" href="css/receipt.css"/>
 		<link rel="stylesheet" type="text/css" href="css/register.css"/>
 		<link rel="stylesheet" type="text/css" href="css/reports.css"/>
+		<link rel="stylesheet" type="text/css" href="css/custom-layout.css"/>
 		<!-- end css template tags -->
 		<!-- bower:js -->
 		<script src="bower_components/jquery/dist/jquery.js"></script>
@@ -76,6 +77,7 @@
 		<!-- start mincss template tags -->
 		<link rel="stylesheet" type="text/css" href="dist/jquery-ui/jquery-ui.min.css"/>
 		<link rel="stylesheet" type="text/css" href="dist/opensourcepos.min.css?rel=88e63d8098"/>
+		<link rel="stylesheet" type="text/css" href="css/custom-layout.css"/>
 		<!-- end mincss template tags -->
 
 		<!-- Tweaks to the UI for a particular theme should drop here  -->
