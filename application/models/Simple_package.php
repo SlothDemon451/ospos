@@ -142,6 +142,7 @@ class Simple_package extends CI_Model
 	{
 		$suggestions = array();
 
+		$this->db->select('package_id, name, package_number, package_price, discount, total_price');
 		$this->db->from('simple_packages');
 		$this->db->like('name', $search);
 		$this->db->or_like('package_number', $search);
@@ -151,7 +152,21 @@ class Simple_package extends CI_Model
 		if ($query !== FALSE) {
 			foreach($query->result() as $row)
 			{
-				$suggestions[] = array('value' => $row->package_id, 'label' => $row->name . ' (' . $row->package_number . ')');
+				// Calculate final price for display
+				$final_price = $row->package_price > 0 ? 
+					$row->package_price - ($row->package_price * $row->discount / 100) : 
+					$row->total_price;
+				
+				// Format price without currency symbol for display
+				$formatted_price = number_format($final_price, 2);
+				
+				$suggestions[] = array(
+					'value' => $row->package_id, 
+					'label' => $row->name . ' (' . $row->package_number . ') - $' . $formatted_price,
+					'package_price' => $row->package_price,
+					'discount' => $row->discount,
+					'total_price' => $row->total_price
+				);
 			}
 		}
 

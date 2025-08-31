@@ -135,6 +135,21 @@ class Sales extends Secure_Controller
 		$suggestions = array_merge($suggestions, $this->Item->get_search_suggestions($search, array('search_custom' => FALSE, 'is_deleted' => FALSE), TRUE));
 		$suggestions = array_merge($suggestions, $this->Item_kit->get_search_suggestions($search));
 		
+		// Add simple packages to search suggestions
+		$this->load->model('Simple_package');
+		$package_suggestions = $this->Simple_package->get_search_suggestions($search);
+		if($package_suggestions !== FALSE) {
+			log_message('debug', 'Package suggestions before transformation: ' . json_encode($package_suggestions));
+			foreach($package_suggestions as &$package) {
+				// Prefix with "PKG" to identify as package
+				$package['label'] = '[PKG] ' . $package['label'];
+				$package['value'] = 'PKG_' . $package['value']; // Prefix to distinguish from regular items
+			}
+			unset($package); // Unset the reference to avoid issues
+			log_message('debug', 'Package suggestions after transformation: ' . json_encode($package_suggestions));
+			$suggestions = array_merge($suggestions, $package_suggestions);
+		}
+		
 		// Track item IDs that are already in the suggestions to prevent duplicates
 		$existing_item_ids = array();
 		foreach ($suggestions as $suggestion) {
@@ -480,23 +495,145 @@ class Sales extends Secure_Controller
 		}
 
 		$item_id_or_number_or_item_kit_or_receipt = $this->input->post('item');
+		
+		// Debug logging for package addition
+		log_message('debug', 'Sales add() called with item: ' . $item_id_or_number_or_item_kit_or_receipt);
 		$this->token_lib->parse_barcode($quantity, $price, $item_id_or_number_or_item_kit_or_receipt);
 		$mode = $this->sale_lib->get_mode();
 		$quantity = ($mode == 'return') ? -$quantity : $quantity;
 		$item_location = $this->sale_lib->get_sale_location();
 
-		// Check stock before adding
-		$stock_warning = $this->sale_lib->out_of_stock($item_id_or_number_or_item_kit_or_receipt, $item_location);
-		if($stock_warning == $this->lang->line('sales_quantity_less_than_zero'))
-		{
-			$data['error'] = $stock_warning;
-			$this->_reload($data);
-			return;
+		// Check stock before adding (skip for packages)
+		if(strpos($item_id_or_number_or_item_kit_or_receipt, 'PKG_') !== 0) {
+			$stock_warning = $this->sale_lib->out_of_stock($item_id_or_number_or_item_kit_or_receipt, $item_location);
+			if($stock_warning == $this->lang->line('sales_quantity_less_than_zero'))
+			{
+				$data['error'] = $stock_warning;
+				$this->_reload($data);
+				return;
+			}
 		}
 
 		if($mode == 'return' && $this->Sale->is_valid_receipt($item_id_or_number_or_item_kit_or_receipt))
 		{
 			$this->sale_lib->return_entire_sale($item_id_or_number_or_item_kit_or_receipt);
+		}
+		elseif(strpos($item_id_or_number_or_item_kit_or_receipt, 'PKG_') === 0)
+		{
+			// Handle simple package
+			$package_id = str_replace('PKG_', '', $item_id_or_number_or_item_kit_or_receipt);
+			
+			log_message('debug', 'Package detected! Original value: ' . $item_id_or_number_or_item_kit_or_receipt . ', Package ID: ' . $package_id);
+			
+			// Load simple package info
+			$this->load->model('Simple_package');
+			$package_info = $this->Simple_package->get_info($package_id);
+			
+			// Debug logging
+			log_message('debug', 'Adding package to sale: ' . $package_id . ' - Package info: ' . json_encode($package_info));
+			
+			if($package_info && $package_info->package_id)
+			{
+				// Calculate final price (package price with discount applied)
+				$package_price = isset($package_info->package_price) ? $package_info->package_price : 0;
+				$discount = isset($package_info->discount) ? $package_info->discount : 0;
+				$total_price = isset($package_info->total_price) ? $package_info->total_price : 0;
+				
+				$final_price = $package_price > 0 ? 
+					$package_price - ($package_price * $discount / 100) : 
+					$total_price;
+				
+				// Debug: Log price calculation
+				log_message('debug', 'Package price calculation - Package price: ' . $package_price . ', Discount: ' . $discount . '%, Total price: ' . $total_price . ', Final price: ' . $final_price);
+				
+				// Add package as a single line item with a special item type
+				$package_name = isset($package_info->name) ? $package_info->name : 'Package ' . $package_id;
+				$package_number = isset($package_info->package_number) ? $package_info->package_number : '';
+				$package_description = isset($package_info->description) ? $package_info->description : '';
+				
+				// Ensure we always have a meaningful description for the package
+				if(empty($package_description)) {
+					$package_description = $package_name;
+				}
+				
+				// Debug: Log the package info being used
+				log_message('debug', 'Package info - Name: ' . $package_name . ', Description: ' . $package_description . ', Number: ' . $package_number);
+				
+				$package_item_data = array(
+					'item_id' => 'PKG_' . $package_id,
+					'item_location' => $item_location,
+					'line' => 0, // Will be set properly below
+					'name' => $package_name . ' [Package]',
+					'item_number' => $package_number,
+					'description' => $package_description,
+					'serialnumber' => '',
+					'allow_alt_description' => FALSE,
+					'is_serialized' => FALSE,
+					'quantity' => $quantity,
+					'discount' => $discount,
+					'discount_type' => $discount_type,
+					'in_stock' => 999, // Packages don't have stock limits
+					'price' => $final_price,
+					'cost_price' => 0,
+					'total' => $final_price * $quantity,
+					'discounted_total' => $final_price * $quantity,
+					'print_option' => PRINT_YES, // This ensures the item will be printed on receipt
+					'stock_type' => 1, // Non-stock item
+					'item_type' => ITEM_TEMP, // Temporary item type
+					'hsn_code' => '',
+					'tax_category_id' => '',
+					'category' => 'Package',
+					'item_category_id' => '',
+					'item_subcategory_id' => '',
+					'tax_option' => 'without_tax',
+					// Add missing fields that might be required for cart calculation
+					'unit_price' => $final_price,
+					'item_unit_price' => $final_price,
+					'item_cost_price' => 0,
+					'item_price' => $final_price,
+					'item_total' => $final_price * $quantity,
+					'item_discount' => $discount,
+					'item_discount_type' => $discount_type,
+					// Add missing fields required by receipt template
+					'attribute_values' => '',
+					'taxed_flag' => ''
+				);
+				
+				// Always use manual cart manipulation for packages since add_item doesn't work with them
+				$cart = $this->sale_lib->get_cart();
+				$maxkey = 0;
+				foreach($cart as $item) {
+					if($maxkey <= $item['line']) {
+						$maxkey = $item['line'];
+					}
+				}
+				$package_item_data['line'] = $maxkey + 1;
+				
+				// Ensure item_id is properly set
+				$package_item_data['item_id'] = 'PKG_' . $package_id;
+				
+				$cart[$maxkey + 1] = $package_item_data;
+				
+				$this->sale_lib->set_cart($cart);
+				
+				// Get package items for stock tracking (but don't add them to cart yet)
+				$this->load->model('Simple_package_items');
+				$package_items = $this->Simple_package_items->get_items($package_id);
+				
+				// Store package items in session for later stock processing
+				if($package_items !== FALSE && is_array($package_items)) {
+					$package_stock_data = array(
+						'package_id' => $package_id,
+						'quantity' => $quantity,
+						'items' => $package_items
+					);
+					$this->session->set_userdata('package_stock_' . $package_id, $package_stock_data);
+				}
+			}
+			else
+			{
+				$data['error'] = $this->lang->line('sales_unable_to_add_item');
+			}
 		}
 		elseif($this->Item_kit->is_valid_item_kit($item_id_or_number_or_item_kit_or_receipt))
 		{
@@ -574,14 +711,23 @@ class Sales extends Secure_Controller
 
 		if($this->form_validation->run() != FALSE)
 		{
-			// Check stock before editing
-			$stock_warning = $this->sale_lib->out_of_stock($this->sale_lib->get_item_id($item_id), $item_location);
-			if($stock_warning == $this->lang->line('sales_quantity_less_than_zero'))
-			{
-				$data['error'] = $stock_warning;
+			// Check stock before editing (skip for packages)
+			$item_id_to_check = $this->sale_lib->get_item_id($item_id);
+			if(strpos($item_id_to_check, 'PKG_') !== 0) {
+				$stock_warning = $this->sale_lib->out_of_stock($item_id_to_check, $item_location);
+				if($stock_warning == $this->lang->line('sales_quantity_less_than_zero'))
+				{
+					$data['error'] = $stock_warning;
+				}
+				else
+				{
+					$this->sale_lib->edit_item($item_id, $description, $serialnumber, $quantity, $discount, $discount_type, $price, $discounted_total);
+					$this->sale_lib->empty_payments();
+				}
 			}
 			else
 			{
+				// For packages, just edit without stock check
 				$this->sale_lib->edit_item($item_id, $description, $serialnumber, $quantity, $discount, $discount_type, $price, $discounted_total);
 				$this->sale_lib->empty_payments();
 			}
@@ -621,18 +767,30 @@ class Sales extends Secure_Controller
 		$sale_type = $this->sale_lib->get_sale_type();
 		$data = array();
 		
-		// Check stock for all items before proceeding
+		// Check stock for all items before proceeding (skip for packages)
 		$cart = $this->sale_lib->get_cart();
+		
+		if($cart == null || count($cart) == 0)
+		{
+			$this->sale_lib->delete_cart();
+			redirect('sales');
+		}
+		
 		$item_location = $this->sale_lib->get_sale_location();
+		
+
 		
 		foreach($cart as $item)
 		{
-			$stock_warning = $this->sale_lib->out_of_stock($item['item_id'], $item_location);
-			if($stock_warning == $this->lang->line('sales_quantity_less_than_zero'))
-			{
-				$data['error'] = $this->lang->line('sales_quantity_less_than_zero');
-				$this->_reload($data);
-				return;
+			// Skip stock check for packages
+			if(strpos($item['item_id'], 'PKG_') !== 0) {
+				$stock_warning = $this->sale_lib->out_of_stock($item['item_id'], $item_location);
+				if($stock_warning == $this->lang->line('sales_quantity_less_than_zero'))
+				{
+					$data['error'] = $this->lang->line('sales_quantity_less_than_zero');
+					$this->_reload($data);
+					return;
+				}
 			}
 		}
 
@@ -893,7 +1051,14 @@ class Sales extends Secure_Controller
 
 			$data['sale_id'] = 'Ven ' . $data['sale_id_num'];
 
+			// Debug: Log cart before filtering
+	
+			
 			$data['cart'] = $this->sale_lib->sort_and_filter_cart($data['cart']);
+			
+			// Debug: Log cart after filtering
+	
+			
 			$data = $this->xss_clean($data);
 
 			if($data['sale_id_num'] == -1)
@@ -1121,6 +1286,15 @@ class Sales extends Secure_Controller
 			$data['total'] = $totals['total'];
 			$data['amount_due'] = $totals['amount_due'];
 		}
+
+		// Debug: Log the values to see what's happening
+		log_message('debug', '=== RECEIPT DEBUG ===');
+		log_message('debug', 'Sale ID: ' . $sale_id);
+		log_message('debug', 'Totals array: ' . json_encode($totals));
+		log_message('debug', 'Payments total: ' . $data['payments_total']);
+		log_message('debug', 'Sale total: ' . $data['total']);
+		log_message('debug', 'Amount due: ' . $data['amount_due']);
+		log_message('debug', 'Cash mode: ' . ($data['cash_mode'] ? 'true' : 'false'));
 
 		$data['amount_change'] = $data['amount_due'] * -1;
 

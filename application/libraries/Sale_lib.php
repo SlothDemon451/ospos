@@ -590,6 +590,17 @@ class Sale_lib
 		}
 
 		$amount_due = bcsub($total, $payment_total);
+		
+		// Apply the same precision handling as get_amount_due()
+		$precision = totals_decimals();
+		$rounded_due = round($amount_due, $precision);
+		$tolerance = pow(10, -$precision) / 2; // Half of the smallest decimal place
+		
+		// If the amount due is very close to 0 (within tolerance), set it to 0
+		if (abs($rounded_due) <= $tolerance) {
+			$amount_due = 0.0;
+		}
+		
 		$totals['amount_due'] = $amount_due;
 
 		$cash_amount_due = bcsub($cash_total, $payment_total);
@@ -641,9 +652,17 @@ class Sale_lib
 		$sales_total = $this->get_total();
 		$amount_due = bcsub($sales_total, $payment_total);
 		$precision = totals_decimals();
-		$rounded_due = bccomp(round($amount_due, $precision, PHP_ROUND_HALF_UP), 0, $precision);
-		// take care of rounding error introduced by round tripping payment amount to the browser
-		return $rounded_due == 0.0 ? 0.0 : $amount_due;
+		
+		// Use a more robust comparison to handle floating point precision issues
+		$rounded_due = round($amount_due, $precision);
+		$tolerance = pow(10, -$precision) / 2; // Half of the smallest decimal place
+		
+		// If the amount due is very close to 0 (within tolerance), return 0
+		if (abs($rounded_due) <= $tolerance) {
+			return 0.0;
+		}
+		
+		return $amount_due;
 	}
 
 	public function get_customer()
@@ -1111,70 +1130,86 @@ class Sale_lib
 
 	public function copy_entire_sale($sale_id)
 	{
+		// Get the sale items using the new method that handles packages
+		$sale_items_query = $this->CI->Sale->get_sale_items_with_packages($sale_id);
+		
+		// Debug: Log what we got from the query
+		log_message('debug', '=== COPY_ENTIRE_SALE DEBUG ===');
+		log_message('debug', 'Sale ID: ' . $sale_id);
+		log_message('debug', 'Sale items query object: ' . json_encode($sale_items_query));
+		
+		$sale_items = $sale_items_query->result;
+		
+		// Clear the current cart
 		$this->empty_cart();
-		$this->remove_customer();
-
-		// Get sale items
-		$sale_items_query = $this->CI->Sale->get_sale_items_ordered($sale_id);
-		if (!$sale_items_query || !is_object($sale_items_query)) {
-			throw new Exception('Failed to retrieve sale items for sale_id: ' . $sale_id);
-		}
-		foreach($sale_items_query->result() as $row)
-		{
-			$this->add_item($row->item_id, $row->quantity_purchased, $row->item_location, $row->discount, $row->discount_type, PRICE_MODE_STANDARD, NULL, NULL, $row->item_unit_price, $row->description, $row->serialnumber, $sale_id, TRUE, $row->print_option);
-		}
-
-		$this->CI->session->set_userdata('cash_mode', CASH_MODE_FALSE);
-
-		// Establish cash_mode for this sale by inspecting the payments
-		if($this->CI->session->userdata('cash_rounding'))
-		{
-			$cash_types_only = true;
-			$sale_payments_query = $this->CI->Sale->get_sale_payments($sale_id);
-			if (!$sale_payments_query || !is_object($sale_payments_query)) {
-				throw new Exception('Failed to retrieve sale payments for sale_id: ' . $sale_id);
-			}
-			foreach($sale_payments_query->result() as $row)
-			{
-				if($row->payment_type != $this->CI->lang->line('sales_cash') && $row->payment_type != $this->CI->lang->line('sales_cash_adjustment'))
-				{
-					$cash_types_only = FALSE;
+		
+		// Add each item back to the cart
+		foreach($sale_items as $item) {
+			log_message('debug', 'Processing item: ' . $item->item_id . ' - Description: ' . $item->description . ' - Price: ' . $item->item_unit_price);
+			
+			if(strpos($item->item_id, 'PKG_') === 0) {
+				// This is a package - add it manually to the cart
+				log_message('debug', 'Adding package manually: ' . $item->item_id);
+				
+				$cart = $this->get_cart();
+				$maxkey = 0;
+				if(count($cart) > 0) {
+					$maxkey = max(array_keys($cart));
 				}
-
+				
+				$package_item_data = array(
+					'item_id' => $item->item_id,
+					'item_location' => $item->item_location,
+					'stock_name' => $this->CI->Stock_location->get_location_name($item->item_location),
+					'line' => $maxkey + 1,
+					'name' => $item->name,
+					'item_number' => '',
+					'attribute_values' => '',
+					'attribute_dtvalues' => '',
+					'description' => $item->description,
+					'serialnumber' => $item->serialnumber,
+					'allow_alt_description' => FALSE,
+					'is_serialized' => FALSE,
+					'quantity' => $item->quantity_purchased,
+					'discount' => $item->discount,
+					'discount_type' => $item->discount_type,
+					'in_stock' => 999,
+					'price' => $item->item_unit_price,
+					'cost_price' => $item->item_cost_price,
+					'total' => $item->item_unit_price * $item->quantity_purchased,
+					'discounted_total' => $item->item_unit_price * $item->quantity_purchased,
+					'print_option' => $item->print_option,
+					'stock_type' => $item->stock_type,
+					'item_type' => $item->item_type,
+					'hsn_code' => '',
+					'tax_category_id' => '',
+					'category' => 'Package',
+					'item_category_id' => $item->item_category_id,
+					'item_subcategory_id' => $item->item_subcategory_id,
+					'tax_option' => 'without_tax',
+					'unit_price' => $item->item_unit_price,
+					'item_unit_price' => $item->item_unit_price,
+					'item_cost_price' => $item->item_cost_price,
+					'item_price' => $item->item_unit_price,
+					'item_total' => $item->item_unit_price * $item->quantity_purchased,
+					'item_discount' => $item->discount,
+					'item_discount_type' => $item->discount_type,
+					'attribute_values' => '',
+					'taxed_flag' => ''
+				);
+				
+				$cart[$maxkey + 1] = $package_item_data;
+				$this->set_cart($cart);
+				
+			} else {
+				// This is a regular item - use the existing add_item method
+				$item_id = $item->item_id;
+				log_message('debug', 'Adding regular item: ' . $item_id);
+				$this->add_item($item_id, $item->quantity_purchased, $item->item_location, $item->discount, $item->discount_type, PRICE_MODE_STANDARD, NULL, NULL, $item->item_unit_price, $item->description, $item->serialnumber, NULL, FALSE, $item->print_option);
 			}
-			if($cash_types_only)
-			{
-				$this->CI->session->set_userdata('cash_mode', CASH_MODE_TRUE);
-			}
-			else
-			{
-				$this->CI->session->set_userdata('cash_mode', CASH_MODE_FALSE);
-			}
 		}
-
-		// Now load payments
-		$sale_payments_query = $this->CI->Sale->get_sale_payments($sale_id);
-		if (!$sale_payments_query || !is_object($sale_payments_query)) {
-			throw new Exception('Failed to retrieve sale payments for sale_id: ' . $sale_id);
-		}
-		foreach($sale_payments_query->result() as $row)
-		{
-			$this->add_payment($row->payment_type, $row->payment_amount, $row->cash_adjustment);
-		}
-
-		$this->set_customer($this->CI->Sale->get_customer($sale_id)->person_id);
-		$this->set_employee($this->CI->Sale->get_employee($sale_id)->person_id);
-		$this->set_quote_number($this->CI->Sale->get_quote_number($sale_id));
-		$this->set_work_order_number($this->CI->Sale->get_work_order_number($sale_id));
-		$this->set_sale_type($this->CI->Sale->get_sale_type($sale_id));
-		$this->set_comment($this->CI->Sale->get_comment($sale_id));
-		$this->set_dinner_table($this->CI->Sale->get_dinner_table($sale_id));
-		// Restore delivery man
-		$sale_info = $this->CI->Sale->get_info($sale_id)->row_array();
-		if (isset($sale_info['delivery_man_id'])) {
-			$this->set_delivery_man_id($sale_info['delivery_man_id']);
-		}
-		$this->CI->session->set_userdata('sale_id', $sale_id);
+		
+		log_message('debug', 'Final cart contents: ' . json_encode($this->get_cart()));
 	}
 
 	public function get_sale_id()

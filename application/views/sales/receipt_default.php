@@ -244,10 +244,28 @@
 			</tr>
 		<?php
 		}
+		
+		// Calculate amount due directly in the receipt template
+		$payments_total = 0;
+		foreach($payments as $payment_id => $payment) {
+			if(!isset($payment['cash_adjustment']) || !$payment['cash_adjustment']) {
+				$payments_total += $payment['payment_amount'];
+			}
+		}
+		
+		$amount_due = $total - $payments_total;
+		$precision = totals_decimals();
+		$rounded_due = round($amount_due, $precision);
+		$tolerance = pow(10, -$precision) / 2;
+		
+		// If amount due is very close to 0, set it to 0
+		if (abs($rounded_due) <= $tolerance) {
+			$amount_due = 0.0;
+		}
 		?>
 		<tr>
-			<td colspan="3" style="text-align:right;"> <?php echo $this->lang->line($amount_change >= 0 ? ($only_sale_check ? 'sales_check_balance' : 'sales_change_due') : 'sales_amount_due') ; ?> </td>
-			<td class="total-value"><?php echo to_currency($amount_change); ?></td>
+			<td colspan="3" style="text-align:right;"> <?php echo $this->lang->line($amount_due >= 0 ? ($only_sale_check ? 'sales_check_balance' : 'sales_change_due') : 'sales_amount_due') ; ?> </td>
+			<td class="total-value"><?php echo to_currency($amount_due); ?></td>
 		</tr>
 	</table>
 	<?php if (!empty($comments)): ?>

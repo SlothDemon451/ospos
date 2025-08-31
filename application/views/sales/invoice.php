@@ -214,7 +214,7 @@ $(document).ready(function()
 			$show_giftcard_remainder |= $splitpayment[0] == $this->lang->line('sales_giftcard');
 		?>
 			<tr>
-				<td colspan="<?php echo $invoice_columns-4; ?>" class="blank"> </td>
+				<td colspan="<?php echo $invoice_columns-3; ?>" class="blank"> </td>
 				<td class="total-line" style="white-space:nowrap;"><small><?php echo date('Y-m-d H:i', strtotime($payment['payment_time'])); ?></small><br><?php echo $splitpayment[0]; ?></td>
 				<td class="total-value" id="paid"><?php echo to_currency( $payment['payment_amount'] * -1 ); ?></td>
 			</tr>
@@ -229,25 +229,40 @@ $(document).ready(function()
 				<td colspan="2" class="total-line"><?php echo $this->lang->line('sales_giftcard_balance'); ?></td>
 				<td class="total-value" id="giftcard"><?php echo to_currency($cur_giftcard_value); ?></td>
 			</tr>
-			<?php
-		}
-
-		if(!empty($payments))
-		{
-		?>
-		<tr>
-			<td colspan="<?php echo $invoice_columns-3; ?>" class="blank"> </td>
-			<td colspan="2" class="total-line"><?php echo $this->lang->line($amount_change >= 0 ? ($only_sale_check ? 'sales_check_balance' : 'sales_change_due') : 'sales_amount_due') ; ?></td>
-			<td class="total-value" id="change"><?php echo to_currency($amount_change); ?></td>
-		</tr>
 		<?php
 		}
 		?>
 
+		<?php
+		// Calculate amount due directly in the invoice template
+		$payments_total = 0;
+		foreach($payments as $payment_id => $payment) {
+			if(!isset($payment['cash_adjustment']) || !$payment['cash_adjustment']) {
+				$payments_total += $payment['payment_amount'];
+			}
+		}
+		
+		$amount_due = $total - $payments_total;
+		$precision = totals_decimals();
+		$rounded_due = round($amount_due, $precision);
+		$tolerance = pow(10, -$precision) / 2;
+		
+		// If amount due is very close to 0, set it to 0
+		if (abs($rounded_due) <= $tolerance) {
+			$amount_due = 0.0;
+		}
+		
+		if(!empty($payments)): ?>
+		<tr>
+			<td colspan="<?php echo $invoice_columns-3; ?>" class="blank"> </td>
+			<td colspan="2" class="total-line"><?php echo $this->lang->line($amount_due >= 0 ? ($only_sale_check ? 'sales_check_balance' : 'sales_change_due') : 'sales_amount_due') ; ?></td>
+			<td class="total-value" id="change"><?php echo to_currency($amount_due); ?></td>
+		</tr>
+		<?php endif; ?>
+
 	</table>
 
 	<div class="suspended-return-policy" style="margin-top: 15px; padding: 8px; border: 1px solid #ccc; font-size: 12px;">
-		<strong>Política de Devolución:</strong><br>
 		<?php echo nl2br($this->config->item('return_policy')); ?>
 	</div>
 		<!-- Signatures -->

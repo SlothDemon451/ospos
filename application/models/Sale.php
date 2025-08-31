@@ -656,16 +656,23 @@ class Sale extends CI_Model
 
 		foreach($items as $line=>$item)
 		{
+			// Handle package IDs: convert "PKG_X" to "-X" for database storage
+			$db_item_id = $item['item_id'];
+			if(strpos($item['item_id'], 'PKG_') === 0) {
+				$package_id = substr($item['item_id'], 4); // Extract the number after "PKG_"
+				$db_item_id = -intval($package_id); // Convert to negative integer
+			}
+			
 			$cur_item_info = $this->Item->get_info($item['item_id']);
-
+			
 			if($item['price'] == 0.00)
 			{
 				$item['discount'] = 0.00;
 			}
-
+			
 			$sales_items_data = array(
 				'sale_id'			=> $sale_id,
-				'item_id'			=> $item['item_id'],
+				'item_id'			=> $db_item_id, // Use the converted ID
 				'line'				=> $item['line'],
 				'description'		=> character_limiter($item['description'], 255),
 				'serialnumber'		=> character_limiter($item['serialnumber'], 30),
@@ -711,7 +718,49 @@ class Sale extends CI_Model
 			$this->Attribute->copy_attribute_links($item['item_id'], 'sale_id', $sale_id);
 		}
 
-		if($customer_id == -1 || $customer->taxable)
+	// Process package stock for simple packages
+	$CI =& get_instance();
+	foreach($items as $line=>$item)
+	{
+		if(strpos($item['item_id'], 'PKG_') === 0 && $sale_status == COMPLETED)
+		{
+			$package_id = str_replace('PKG_', '', $item['item_id']);
+			$package_stock_data = $CI->session->userdata('package_stock_' . $package_id);
+			
+			if($package_stock_data && isset($package_stock_data['items']))
+			{
+				foreach($package_stock_data['items'] as $package_item)
+				{
+					$item_quantity = $package_item->quantity * $item['quantity'];
+					
+					// Update stock quantity for package items
+					$item_quantity_obj = $this->Item_quantity->get_item_quantity($package_item->item_id, $item['item_location']);
+					$this->Item_quantity->save(array(
+						'quantity' => $item_quantity_obj->quantity - $item_quantity,
+						'item_id' => $package_item->item_id,
+						'location_id' => $item['item_location']
+					), $package_item->item_id, $item['item_location']);
+
+					// Inventory Count Details for package items
+					$sale_remarks = 'Ven ' . $sale_id . ' (Package)';
+					$inv_data = array(
+						'trans_date' => date('Y-m-d H:i:s'),
+						'trans_items' => $package_item->item_id,
+						'trans_user' => $employee_id,
+						'trans_location' => $item['item_location'],
+						'trans_comment' => $sale_remarks,
+						'trans_inventory' => -$item_quantity
+					);
+					$this->Inventory->insert($inv_data);
+				}
+				
+				// Clear the session data
+				$CI->session->unset_userdata('package_stock_' . $package_id);
+			}
+		}
+	}
+
+	if($customer_id == -1 || $customer->taxable)
 		{
 			$this->save_sales_tax($sale_id, $sales_taxes[0]);
 			$this->save_sales_items_taxes($sale_id, $sales_taxes[1]);
@@ -1815,5 +1864,130 @@ class Sale extends CI_Model
 		$this->db->insert('sales_payments', $payment_data);
 	}
 
+	/**
+	 * Used by the invoice and receipt programs - handles packages correctly
+	 */
+	public function get_sale_items_with_packages($sale_id)
+	{
+		$this->db->select('sales_items.sale_id, sales_items.item_id, sales_items.description, serialnumber, line, quantity_purchased, item_cost_price, sales_items.item_unit_price, discount, discount_type, item_location, print_option');
+		$this->db->from('sales_items');
+		$this->db->where('sales_items.sale_id', $sale_id);
+		
+		$query = $this->db->get();
+		$sale_items = $query->result();
+		
+		// Debug: Log what we're getting from the database
+		log_message('debug', '=== GET_SALE_ITEMS_WITH_PACKAGES DEBUG ===');
+		log_message('debug', 'Sale ID: ' . $sale_id);
+		log_message('debug', 'Database query: ' . $this->db->last_query());
+		log_message('debug', 'Database result rows: ' . $query->num_rows());
+		log_message('debug', 'Raw sale items from database: ' . json_encode($sale_items));
+		
+		$processed_items = array();
+		
+		// Load required models
+		$CI =& get_instance();
+		$CI->load->model('Simple_package');
+		$CI->load->model('Item');
+		
+		foreach($sale_items as $item) {
+			log_message('debug', 'Processing item: ' . $item->item_id . ' - Description: ' . $item->description);
+			
+			// Convert negative item_ids back to "PKG_X" format for packages
+			$original_item_id = $item->item_id;
+			if($item->item_id < 0) {
+				$package_id = abs($item->item_id); // Convert negative to positive
+				$item->item_id = 'PKG_' . $package_id; // Convert back to "PKG_X" format
+				log_message('debug', 'Converted negative item_id back to package format: ' . $original_item_id . ' -> ' . $item->item_id);
+			}
+			
+			// Check if this is a package (negative item_id in database)
+			if($original_item_id < 0) {
+				// This is a package - get package info
+				$package_id = abs($original_item_id);
+				$package_info = $CI->Simple_package->get_info($package_id);
+				
+				if($package_info) {
+					$item->name = $package_info->name;
+					$item->item_category_id = '';
+					$item->item_subcategory_id = '';
+					$item->item_type = 3; // Package type
+					$item->stock_type = 1; // Non-stock item
+					log_message('debug', 'Package item processed: ' . $item->name);
+				} else {
+					$item->name = 'Unknown Package';
+					$item->item_category_id = '';
+					$item->item_subcategory_id = '';
+					$item->item_type = 3;
+					$item->stock_type = 1;
+					log_message('debug', 'Package item processed: Unknown Package (not found)');
+				}
+			} else {
+				// This is a regular item - get item info
+				$item_info = $CI->Item->get_info($original_item_id);
+				if($item_info) {
+					$item->name = $item_info->name;
+					$item->item_category_id = $item_info->item_category_id;
+					$item->item_subcategory_id = $item_info->item_subcategory_id;
+					$item->item_type = $item_info->item_type;
+					$item->stock_type = $item_info->stock_type;
+					log_message('debug', 'Regular item processed: ' . $item->name);
+				} else {
+					$item->name = '';
+					$item->item_category_id = '';
+					$item->item_subcategory_id = '';
+					$item->item_type = '';
+					$item->stock_type = '';
+					log_message('debug', 'Regular item processed: (not found)');
+				}
+			}
+			
+			$processed_items[] = $item;
+		}
+		
+		log_message('debug', 'Processed sale items: ' . json_encode($processed_items));
+		
+		// Sort the items based on configuration
+		// Entry sequence (this will render kits in the expected sequence)
+		if($this->config->item('line_sequence') == '0')
+		{
+			usort($processed_items, function($a, $b) {
+				return $a->line - $b->line;
+			});
+		}
+		elseif($this->config->item('line_sequence') == '1')
+		{
+			usort($processed_items, function($a, $b) {
+				if($a->stock_type != $b->stock_type) {
+					return $b->stock_type - $a->stock_type;
+				}
+				return $a->line - $b->line;
+			});
+		}
+		elseif($this->config->item('line_sequence') == '2')
+		{
+			usort($processed_items, function($a, $b) {
+				if($a->item_category_id != $b->item_category_id) {
+					return $a->item_category_id - $b->item_category_id;
+				}
+				return $a->line - $b->line;
+			});
+		}
+		else
+		{
+			usort($processed_items, function($a, $b) {
+				return $b->line - $a->line;
+			});
+		}
+		
+		// Create a proper result object that behaves like a database result
+		$result = new stdClass();
+		$result->result = $processed_items;
+		$result->num_rows = count($processed_items);
+		
+		log_message('debug', 'Final result object: ' . json_encode($result));
+		
+		return $result;
+	}
 }
 ?>

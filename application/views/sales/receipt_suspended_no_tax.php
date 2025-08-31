@@ -120,21 +120,10 @@ document.addEventListener('DOMContentLoaded', function() {
 		Empleado: <?php echo htmlspecialchars($employee); ?>
 		<?php if (!empty($delivery_man_name)) { ?>
 			<br>Repartidor: <?php echo htmlspecialchars($delivery_man_name); ?>
-			<?php if (!empty($delivery_man_phone)) { ?>
-				<br>Tel: <?php echo htmlspecialchars($delivery_man_phone); ?>
-			<?php } ?>
-			<?php if (!empty($delivery_man_email)) { ?>
-				<br>Email: <?php echo htmlspecialchars($delivery_man_email); ?>
-			<?php } ?>
 		<?php } ?>
 	</div>
 
-	<div class="suspended-footer-note">
-		Todos los gastos están incluidos en el total
-	</div>
-
 	<div class="suspended-return-policy" style="margin-top: 15px; padding: 8px; border: 1px solid #ccc; font-size: 12px;">
-		<strong>Política de Devolución:</strong><br>
 		<?php echo nl2br($this->config->item('return_policy')); ?>
 	</div>
 

@@ -72,22 +72,6 @@
 		</div>
 
 		<div class="form-group form-group-sm">
-			<?php echo form_label('Discount (%)', 'discount', array('class'=>'control-label col-xs-3')); ?>
-			<div class='col-xs-8'>
-				<div class="input-group">
-					<span class="input-group-addon input-sm"><span class="glyphicon glyphicon-percent"></span></span>
-					<?php echo form_input(array(
-							'name'=>'discount',
-							'id'=>'discount',
-							'class'=>'form-control input-sm',
-							'value'=>isset($package_info->discount) ? $package_info->discount : '0',
-							'placeholder'=>'0'
-					)); ?>
-				</div>
-			</div>
-		</div>
-
-		<div class="form-group form-group-sm">
 			<?php echo form_label($this->lang->line('simple_packages_add_item'), 'item', array('class'=>'control-label col-xs-3')); ?>
 			<div class='col-xs-8'>
 				<?php echo form_input(array(
@@ -140,7 +124,7 @@
 		</div>
 
 		<div class="form-group form-group-sm">
-			<label class="control-label col-xs-3">Final Price (After Discount):</label>
+			<label class="control-label col-xs-3">Final Price:</label>	
 			<div class='col-xs-8'>
 				<strong id="final_price">$0.00</strong>
 			</div>

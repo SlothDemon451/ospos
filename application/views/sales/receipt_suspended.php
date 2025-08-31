@@ -140,18 +140,40 @@ document.addEventListener('DOMContentLoaded', function() {
      			  ) 
      			: '-';
 			
-			list($line_subtotal, $line_tax, $line_total) = calc_line_tax_and_subtotal($item, $CI);
-			$subtotal_sum += $line_subtotal;
-			$tax_sum += $line_tax;
+			// Create a clean copy of item data without discounts for tax calculation
+			$clean_item = $item;
+			$clean_item['discount'] = 0;
+			$clean_item['discount_type'] = 0;
+			
+			// Get the original tax calculation (without discounts)
+			list($line_subtotal, $line_tax, $line_total) = calc_line_tax_and_subtotal($clean_item, $CI);
+			
+			// Check if this is a tax-inclusive item
+			$item_tax_info = $CI->Item_taxes->get_info($item['item_id']);
+			$has_tax_inclusive = false;
+			foreach($item_tax_info as $item_tax) {
+				if (isset($item_tax['tax_type']) && $item_tax['tax_type'] == 1) {
+					$has_tax_inclusive = true;
+					break;
+				}
+			}
+			
+			// Calculate discount amount and apply it
 			$discount_amount = 0;
 			if ($discount > 0) {
-				if ($discount_type == 1) { 
+				if ($discount_type == 1) { // Fixed amount discount
 					$discount_amount = bcmul($item['quantity'], $discount);
-				} else {
+				} else { // Percentage discount
+					// Apply discount to total (base + tax)
 					$discount_amount = bcmul($line_total, bcdiv($discount, 100));
 				}
 			}
-			$line_total = $line_total - $discount_amount;
+			
+			// Apply discount to total
+			$line_total = bcsub($line_total, $discount_amount);
+			
+			$subtotal_sum += $line_subtotal;
+			$tax_sum += $line_tax;
 		?>
 		<tr>
 			<td><?php echo htmlspecialchars($item['name'] . (isset($item['attribute_values']) ? ' ' . $item['attribute_values'] : '')); ?></td>
@@ -163,11 +185,38 @@ document.addEventListener('DOMContentLoaded', function() {
 			<td><?php echo to_currency($line_total); ?></td>
 		</tr>
 		<?php endif; endforeach; ?>
+		
+		<?php
+		// Calculate total discount amount
+		$total_discount = 0;
+		foreach($cart as $line=>$item) {
+			if($item['print_option'] == PRINT_YES) {
+				$discount = isset($item['discount']) ? $item['discount'] : 0;
+				$discount_type = isset($item['discount_type']) ? $item['discount_type'] : 0;
+				
+				if ($discount > 0) {
+					if ($discount_type == 1) { // Fixed amount discount
+						$total_discount = bcadd($total_discount, bcmul($item['quantity'], $discount));
+					} else { // Percentage discount
+						// Get original total for this item to calculate discount
+						$clean_item = $item;
+						$clean_item['discount'] = 0;
+						$clean_item['discount_type'] = 0;
+						list($item_subtotal, $item_tax, $item_total) = calc_line_tax_and_subtotal($clean_item, $CI);
+						$discount_amount = bcmul($item_total, bcdiv($discount, 100));
+						$total_discount = bcadd($total_discount, $discount_amount);
+					}
+				}
+			}
+		}
+		?>
+		
 		<tr>
-			<td colspan="4" style="text-align:right;"><strong>SubTotal:</strong></td>
-			<td><?php echo to_currency($subtotal_sum); ?></td>
-			<td><?php echo to_currency($tax_sum); ?></td>
-			<td><?php echo to_currency($total); ?></td>
+			<td colspan="3" style="text-align:right;"><strong>SubTotal:</strong></td>
+			<td style="text-align:center;"><?php echo to_currency($total_discount); ?></td>
+			<td style="text-align:left;"><?php echo to_currency($subtotal_sum); ?></td>
+			<td style="text-align:left;"><?php echo to_currency($tax_sum); ?></td>
+			<td style="text-align:left;"><?php echo to_currency($total); ?></td>
 		</tr>
 	</table>
 
@@ -180,10 +229,58 @@ document.addEventListener('DOMContentLoaded', function() {
 	<div style="margin-top: 30px;">
 		<strong>Desglose de Impuestos:</strong>
 		<table class="tax-breakdown-table">
-			<?php foreach($taxes as $tax): ?>
+			<?php 
+			// Calculate individual tax amounts for each tax rate
+			$tax_breakdown = array();
+			
+			// Initialize tax amounts for each tax rate
+			foreach($taxes as $tax) {
+				$tax_rate = isset($tax['tax_rate']) ? (float)$tax['tax_rate'] : 0;
+				$tax_breakdown[$tax_rate] = array(
+					'tax_group' => $tax['tax_group'],
+					'tax_rate' => $tax_rate,
+					'tax_amount' => 0
+				);
+			}
+			
+			// Calculate tax amounts for each item based on their actual tax rates
+			foreach($cart as $line=>$item) {
+				if($item['print_option'] == PRINT_YES) {
+					// Get the tax info for this specific item
+					$item_tax_info = $CI->Item_taxes->get_info($item['item_id']);
+					
+					foreach($item_tax_info as $item_tax) {
+						$item_tax_rate = (float)$item_tax['percent'];
+						
+						// Find the matching tax rate in our breakdown
+						if (isset($tax_breakdown[$item_tax_rate])) {
+							// Calculate tax on the ORIGINAL price (before discount)
+							$original_item_total = bcmul($item['quantity'], $item['price']);
+							
+							// Check if this item has tax-inclusive pricing
+							$tax_type = isset($item_tax['tax_type']) ? $item_tax['tax_type'] : 0;
+							
+							if ($tax_type == 1) {
+
+								$base_price = bcdiv($original_item_total, bcadd(1, bcdiv($item_tax_rate, 100)));
+								$tax_amount = bcsub($original_item_total, $base_price);
+							} else {
+								// Regular pricing: calculate tax on base price
+								$tax_amount = bcmul($original_item_total, bcdiv($item_tax_rate, 100));
+							}
+							
+							// Add the tax amount for this item at this rate
+							$tax_breakdown[$item_tax_rate]['tax_amount'] = bcadd($tax_breakdown[$item_tax_rate]['tax_amount'], $tax_amount);
+						}
+					}
+				}
+			}
+			
+			// Display the tax breakdown
+			foreach($tax_breakdown as $tax): ?>
 			<tr>
-				<td class="tax-label"><?php echo htmlspecialchars($tax['tax_group']); ?> <?php echo isset($tax['tax_rate']) ? (is_numeric($tax['tax_rate']) ? (float)$tax['tax_rate'] . '%' : $tax['tax_rate']) : ''; ?></td>
-				<td class="tax-amount"><?php echo to_currency($tax_sum); ?></td>
+				<td class="tax-label"><?php echo htmlspecialchars($tax['tax_group']); ?> <?php echo $tax['tax_rate']; ?>%</td>
+				<td class="tax-amount"><?php echo to_currency($tax['tax_amount']); ?></td>
 			</tr>
 			<?php endforeach; ?>
 		</table>
@@ -194,21 +291,10 @@ document.addEventListener('DOMContentLoaded', function() {
 		Empleado: <?php echo htmlspecialchars($employee); ?>
 		<?php if (!empty($delivery_man_name)) { ?>
 			<br>Repartidor: <?php echo htmlspecialchars($delivery_man_name); ?>
-			<?php if (!empty($delivery_man_phone)) { ?>
-				<br>Tel: <?php echo htmlspecialchars($delivery_man_phone); ?>
-			<?php } ?>
-			<?php if (!empty($delivery_man_email)) { ?>
-				<br>Email: <?php echo htmlspecialchars($delivery_man_email); ?>
-			<?php } ?>
 		<?php } ?>
 	</div>
 
-	<div class="suspended-footer-note">
-		Todos los gastos e impuestos están incluidos en el total
-	</div>
-
 	<div class="suspended-return-policy" style="margin-top: 15px; padding: 8px; border: 1px solid #ccc; font-size: 12px;">
-		<strong>Política de Devolución:</strong><br>
 		<?php echo nl2br($this->config->item('return_policy')); ?>
 	</div>
 

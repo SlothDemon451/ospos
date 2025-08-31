@@ -72,6 +72,7 @@ class Module extends CI_Model
 		$this->db->where('person_id', $person_id);
 		$this->db->where_in('menu_group', $menus);
 		$this->db->where('sort !=', 0);
+		$this->db->where('modules.module_id !=', 'item_kits'); // Filter out item_kits module
 		$this->db->order_by('sort', 'asc');
 		return $this->db->get();
 	}
@@ -85,6 +86,7 @@ class Module extends CI_Model
 		$this->db->where('person_id', $person_id);
 		$this->db->where_in('menu_group', $menus);
 		$this->db->where('sort !=', 0);
+		$this->db->where('modules.module_id !=', 'item_kits'); // Filter out item_kits module
 		$this->db->order_by('sort', 'asc');
 		return $this->db->get();
 	}
