@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
 					Fecha: <?php echo $transaction_time; ?><br>
 					<?php if($this->config->item('company')) echo htmlspecialchars($this->config->item('company')) . '<br>';
 					if($this->config->item('vat_number')){
-						echo 'VAT: ' . htmlspecialchars($this->config->item('vat_number')) . '<br>';
+						echo '' . htmlspecialchars($this->config->item('vat_number')) . '<br>';
 					}
 					if($this->config->item('address')) echo nl2br(htmlspecialchars($this->config->item('address'))) . '<br>';
 					if($this->config->item('phone')) echo htmlspecialchars($this->config->item('phone')) . '<br>';
@@ -72,12 +72,13 @@ document.addEventListener('DOMContentLoaded', function() {
 		<tr>
 			<th style="width:40%;">Producto:</th>
 			<th style="width:12%;">Precio:</th>
+            <th style="width:12%;">Cantidad:</th>
 			<th style="width:12%;">Dto.:</th>
-			<th style="width:12%;">Cantidad:</th>
 			<th style="width:12%;">Total:</th>
 		</tr>
 		<?php 
 		$subtotal_sum = 0;
+		$total_discount = 0;
 		foreach($cart as $line=>$item): if($item['print_option'] == PRINT_YES): 
 			$discount = isset($item['discount']) ? $item['discount'] : 0;
 			$discount_type = isset($item['discount_type']) ? $item['discount_type'] : 0;
@@ -101,18 +102,20 @@ document.addEventListener('DOMContentLoaded', function() {
 			}
 			$item_total_after_discount = $item_total - $discount_amount;
 			$subtotal_sum += $item_total_after_discount;
+			$total_discount += $discount_amount;
 		?>
 		<tr>
 			<td><?php echo htmlspecialchars($item['name'] . (isset($item['attribute_values']) ? ' ' . $item['attribute_values'] : '')); ?></td>
 			<td><?php echo to_currency($item['price']); ?></td>
-			<td style="text-align:center;"><?php echo $discount_display; ?></td>
 			<td><?php echo to_quantity_decimals($item['quantity']); ?></td>
+			<td style="text-align:center;"><?php echo $discount_display; ?></td>
 			<td><?php echo to_currency($item_total_after_discount); ?></td>
 		</tr>
 		<?php endif; endforeach; ?>
 		<tr class="suspended-total-row">
-			<td colspan="4" style="text-align:right;">Total a pagar:</td>
-			<td><?php echo to_currency($total); ?></td>
+			<td colspan="3" style="text-align:right;">Total a pagar:</td>
+			<td><?php echo to_currency($total_discount); ?></td>
+			<td><?php echo to_currency($subtotal_sum); ?></td>
 		</tr>
 	</table>
 

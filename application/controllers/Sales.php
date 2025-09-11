@@ -980,8 +980,12 @@ class Sales extends Secure_Controller
 				$data['sale_status'] = SUSPENDED;
 				$sale_type = SALE_TYPE_WORK_ORDER;
 
-				$tax_details = isset($tax_details) ? $tax_details : array(array(), array());
-				$data['sale_id_num'] = $this->Sale->save($sale_id, $data['sale_status'], $data['cart'], $customer_id, $employee_id, $data['comments'], $invoice_number, $work_order_number, $quote_number, $sale_type, $data['payments'], $data['dinner_table'], $tax_details, $this->sale_lib->get_delivery_man_id());
+				// Ensure tax_details is properly calculated
+				if(!isset($tax_details) || !is_array($tax_details) || count($tax_details) !== 2) {
+					$tax_details = $this->tax_lib->get_taxes($data['cart']);
+				}
+				$delivery_man_id = $this->sale_lib->get_delivery_man_id();
+				$data['sale_id_num'] = $this->Sale->save($sale_id, $data['sale_status'], $data['cart'], $customer_id, $employee_id, $delivery_man_id, $data['comments'], $invoice_number, $work_order_number, $quote_number, $sale_type, $data['payments'], $data['dinner_table'], $tax_details);
 				$this->sale_lib->set_suspended_id($data['sale_id_num']);
 
 				$data['cart'] = $this->sale_lib->sort_and_filter_cart($data['cart']);
@@ -1018,8 +1022,12 @@ class Sales extends Secure_Controller
 				$data['sale_status'] = SUSPENDED;
 				$sale_type = SALE_TYPE_QUOTE;
 
-				$tax_details = isset($tax_details) ? $tax_details : array(array(), array());
-				$data['sale_id_num'] = $this->Sale->save($sale_id, $data['sale_status'], $data['cart'], $customer_id, $employee_id, $data['comments'], $invoice_number, $work_order_number, $quote_number, $sale_type, $data['payments'], $data['dinner_table'], $tax_details, $this->sale_lib->get_delivery_man_id());
+				// Ensure tax_details is properly calculated
+				if(!isset($tax_details) || !is_array($tax_details) || count($tax_details) !== 2) {
+					$tax_details = $this->tax_lib->get_taxes($data['cart']);
+				}
+				$delivery_man_id = $this->sale_lib->get_delivery_man_id();
+				$data['sale_id_num'] = $this->Sale->save($sale_id, $data['sale_status'], $data['cart'], $customer_id, $employee_id, $delivery_man_id, $data['comments'], $invoice_number, $work_order_number, $quote_number, $sale_type, $data['payments'], $data['dinner_table'], $tax_details);
 				$this->sale_lib->set_suspended_id($data['sale_id_num']);
 
 				$data['cart'] = $this->sale_lib->sort_and_filter_cart($data['cart']);
@@ -1046,8 +1054,12 @@ class Sales extends Secure_Controller
 				$sale_type = SALE_TYPE_POS;
 			}
 
-			$tax_details = isset($tax_details) ? $tax_details : array(array(), array());
-			$data['sale_id_num'] = $this->Sale->save($sale_id, $data['sale_status'], $data['cart'], $customer_id, $employee_id, $this->sale_lib->get_delivery_man_id(), $data['comments'], $invoice_number, $work_order_number, $quote_number, $sale_type, $data['payments'], $data['dinner_table'], $tax_details);
+			// Ensure tax_details is properly calculated
+			if(!isset($tax_details) || !is_array($tax_details) || count($tax_details) !== 2) {
+				$tax_details = $this->tax_lib->get_taxes($data['cart']);
+			}
+			$delivery_man_id = $this->sale_lib->get_delivery_man_id();
+			$data['sale_id_num'] = $this->Sale->save($sale_id, $data['sale_status'], $data['cart'], $customer_id, $employee_id, $delivery_man_id, $data['comments'], $invoice_number, $work_order_number, $quote_number, $sale_type, $data['payments'], $data['dinner_table'], $tax_details);
 
 			$data['sale_id'] = 'Ven ' . $data['sale_id_num'];
 
@@ -1871,7 +1883,8 @@ class Sales extends Secure_Controller
 		$tax_details = $this->tax_lib->get_taxes($cart);
 		$sales_taxes = array($tax_details[0], $tax_details[1]);
 
-		if($this->Sale->save($sale_id, $sale_status, $cart, $customer_id, $employee_id, $this->sale_lib->get_delivery_man_id(), $comment, $invoice_number, $work_order_number, $quote_number, $sale_type, $payments, $dinner_table, $sales_taxes) == '-1')
+		$delivery_man_id = $this->sale_lib->get_delivery_man_id();
+		if($this->Sale->save($sale_id, $sale_status, $cart, $customer_id, $employee_id, $delivery_man_id, $comment, $invoice_number, $work_order_number, $quote_number, $sale_type, $payments, $dinner_table, $sales_taxes) == '-1')
 		{
 			$data['error'] = $this->lang->line('sales_unsuccessfully_suspended_sale');
 		}

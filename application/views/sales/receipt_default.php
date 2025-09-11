@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
 					Fecha: <?php echo $transaction_time; ?><br>
 					<?php if($this->config->item('company')) echo htmlspecialchars($this->config->item('company')) . '<br>';
 					if($this->config->item('vat_number')){
-						echo 'VAT: ' . htmlspecialchars($this->config->item('vat_number')) . '<br>';
+						echo '' . htmlspecialchars($this->config->item('vat_number')) . '<br>';
 					}
 					if($this->config->item('address')) echo nl2br(htmlspecialchars($this->config->item('address'))) . '<br>';
 					if($this->config->item('phone')) echo htmlspecialchars($this->config->item('phone')) . '<br>';

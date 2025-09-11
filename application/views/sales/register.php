@@ -1038,6 +1038,7 @@ $(document).ready(function()
 
 	var selectState = 'category';
 	var selectedCategory = null;
+	var selectedSubcategory = null;
 
 	function loadCategories() {
 		$.getJSON('items/get_all_categories', function(data) {
@@ -1049,6 +1050,36 @@ $(document).ready(function()
 			});
 			selectState = 'category';
 			selectedCategory = null;
+			selectedSubcategory = null;
+			$select.val('');
+		});
+	}
+
+	function loadSubcategoriesByCategory(category_id) {
+		$.getJSON('items/get_subcategories_json/' + category_id, function(data) {
+			var $select = $('#cascading_select');
+			$select.empty();
+			$select.append('<option value="back">← Back to Categories</option>');
+			$.each(data, function(id, name) {
+				$select.append('<option value="subcat_' + id + '">' + name + '</option>');
+			});
+			selectState = 'subcategory';
+			selectedCategory = category_id;
+			selectedSubcategory = null;
+			$select.val('');
+		});
+	}
+
+	function loadItemsBySubcategory(subcategory_id) {
+		$.getJSON('items/get_items_by_subcategory/' + subcategory_id, function(data) {
+			var $select = $('#cascading_select');
+			$select.empty();
+			$select.append('<option value="back">← Back to Subcategories</option>');
+			$.each(data, function(id, name) {
+				$select.append('<option value="item_' + id + '">' + name + '</option>');
+			});
+			selectState = 'item';
+			selectedSubcategory = subcategory_id;
 			$select.val('');
 		});
 	}
@@ -1063,6 +1094,7 @@ $(document).ready(function()
 			});
 			selectState = 'item';
 			selectedCategory = category_id;
+			selectedSubcategory = null;
 			$select.val('');
 		});
 	}
@@ -1074,7 +1106,15 @@ $(document).ready(function()
 		var select = this;
 		var val = $(this).val();
 		if (val === 'back') {
-			loadCategories();
+			if (selectState === 'subcategory') {
+				loadCategories();
+			} else if (selectState === 'item') {
+				if (selectedSubcategory) {
+					loadSubcategoriesByCategory(selectedCategory);
+				} else {
+					loadCategories();
+				}
+			}
 			setTimeout(function() { select.value = ''; }, 0);
 			return;
 		}
@@ -1082,7 +1122,21 @@ $(document).ready(function()
 		if (selectState === 'category') {
 			if (val && val.startsWith('cat_')) {
 				var category_id = val.replace('cat_', '');
-				loadItemsByCategory(category_id);
+				// Check if category has subcategories, if so load subcategories, otherwise load items directly
+				$.getJSON('items/get_subcategories_json/' + category_id, function(data) {
+					if (Object.keys(data).length > 0) {
+						// Category has subcategories, load them
+						loadSubcategoriesByCategory(category_id);
+					} else {
+						// No subcategories, load items directly
+						loadItemsByCategory(category_id);
+					}
+				});
+			}
+		} else if (selectState === 'subcategory') {
+			if (val && val.startsWith('subcat_')) {
+				var subcategory_id = val.replace('subcat_', '');
+				loadItemsBySubcategory(subcategory_id);
 			}
 		} else if (selectState === 'item') {
 			if (val && val.startsWith('item_')) {

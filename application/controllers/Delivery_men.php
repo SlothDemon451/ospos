@@ -314,11 +314,12 @@ class Delivery_men extends Persons
 		$total_sales = count($sales);
 		
 		foreach ($sales as $sale) {
-			// Get items for this sale with proper item names from items table
-			$sale_items = $this->Sale->get_sale_items_ordered($sale->sale_id)->result();
+			// Get items for this sale with packages support
+			$sale_items_query = $this->Sale->get_sale_items_with_packages($sale->sale_id);
+			$sale_items = $sale_items_query->result;
 			
 			foreach ($sale_items as $item) {
-				// Use item name from items table, fallback to description if name is empty
+				// Use item name (already processed by get_sale_items_with_packages), fallback to description if name is empty
 				$item_name = !empty($item->name) ? $item->name : ($item->description ?: 'Item #' . $item->item_id);
 				
 				// Create a unique key that includes item_id, price, and discount

@@ -49,6 +49,11 @@ $(document).ready(function()
 			title='<?php echo $this->lang->line($controller_name.'_new'); ?>'>
 		<span class="glyphicon glyphicon-tags">&nbsp</span><?php echo $this->lang->line($controller_name . '_new'); ?>
 	</button>
+	<?php if($this->Employee->has_grant('expenses_categories', $this->session->userdata('person_id'))): ?>
+	<button class='btn btn-warning btn-sm pull-right' onclick="window.location.href='<?php echo site_url('expenses_categories'); ?>'">
+		<span class="glyphicon glyphicon-list">&nbsp</span>Manage Categories
+	</button>
+	<?php endif; ?>
 </div>
 
 <div id="toolbar">

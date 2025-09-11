@@ -1130,6 +1130,53 @@ class Sale_lib
 
 	public function copy_entire_sale($sale_id)
 	{
+		// Get the sale info first
+		$sale_info = $this->CI->Sale->get_info($sale_id)->row();
+		
+		// Set the sale_id so that when we suspend again, it updates the existing record
+		$this->set_sale_id($sale_id);
+		
+		// Copy customer information
+		if($sale_info->customer_id != -1) {
+			$this->set_customer($sale_info->customer_id);
+		}
+		
+		// Copy comment
+		if(!empty($sale_info->comment)) {
+			$this->set_comment($sale_info->comment);
+		}
+		
+		// Copy invoice number
+		if(!empty($sale_info->invoice_number)) {
+			$this->set_invoice_number($sale_info->invoice_number);
+		}
+		
+		// Copy quote number
+		if(!empty($sale_info->quote_number)) {
+			$this->set_quote_number($sale_info->quote_number);
+		}
+		
+		// Copy work order number
+		$work_order_number = $this->CI->Sale->get_work_order_number($sale_id);
+		if(!empty($work_order_number)) {
+			$this->set_work_order_number($work_order_number);
+		}
+		
+		// Copy delivery man
+		if(!empty($sale_info->delivery_man_id)) {
+			$this->set_delivery_man_id($sale_info->delivery_man_id);
+		}
+		
+		// Copy dinner table
+		$dinner_table_id = $this->CI->Sale->get_dinner_table($sale_id);
+		if(!empty($dinner_table_id)) {
+			$this->set_dinner_table($dinner_table_id);
+		}
+		
+		// Copy sale type
+		$sale_type = $this->CI->Sale->get_sale_type($sale_id);
+		$this->set_sale_type($sale_type);
+		
 		// Get the sale items using the new method that handles packages
 		$sale_items_query = $this->CI->Sale->get_sale_items_with_packages($sale_id);
 		
@@ -1209,12 +1256,23 @@ class Sale_lib
 			}
 		}
 		
+		// Copy payments
+		$payments = $this->CI->Sale->get_sale_payments($sale_id);
+		foreach($payments->result() as $payment) {
+			$this->add_payment($payment->payment_type, $payment->payment_amount, $payment->cash_refund, $payment->cash_adjustment);
+		}
+		
 		log_message('debug', 'Final cart contents: ' . json_encode($this->get_cart()));
 	}
 
 	public function get_sale_id()
 	{
 		return $this->CI->session->userdata('sale_id');
+	}
+
+	public function set_sale_id($sale_id)
+	{
+		$this->CI->session->set_userdata('sale_id', $sale_id);
 	}
 
 	public function clear_all()

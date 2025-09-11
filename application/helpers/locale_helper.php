@@ -293,6 +293,9 @@ function get_payment_options()
 		$payments[$lang->line('sales_upi')] = $lang->line('sales_upi');
 	}
 
+	// Add custom payment types
+	$payments[$lang->line('sales_bizum')] = $lang->line('sales_bizum');
+
 	return $payments;
 }
 

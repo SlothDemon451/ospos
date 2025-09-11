@@ -215,6 +215,7 @@ $lang["sales_unsuspend"] = "Unsuspend";
 $lang["sales_unsuspend_and_delete"] = "Action";
 $lang["sales_update"] = "Update";
 $lang["sales_upi"] = "UPI";
+$lang["sales_bizum"] = "Bizum";
 $lang["sales_visa"] = "";
 $lang["sales_wholesale"] = "";
 $lang["sales_work_order"] = "Work Order";
