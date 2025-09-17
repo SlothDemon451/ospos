@@ -614,7 +614,7 @@ class Reports extends Secure_Controller
 		$this->load->view('reports/graphical', $data);
 	}
 
-	//Graphical summary customers report
+	//Graphical summary categories report
 	public function graphical_summary_categories($start_date, $end_date, $sale_type, $location_id = 'all')
 	{
 		$inputs = array('start_date' => $start_date, 'end_date' => $end_date, 'sale_type' => $sale_type, 'location_id' => $location_id);
@@ -624,15 +624,44 @@ class Reports extends Secure_Controller
 
 		$report_data = $model->getData($inputs);
 		$summary = $this->xss_clean($model->getSummaryData($inputs));
+		
+		// Debug logging (can be removed in production)
+		// log_message('debug', 'Categories Report - Report data count: ' . count($report_data));
 
 		$labels = array();
 		$series = array();
-		foreach($report_data as $row)
-		{
-			$row = $this->xss_clean($row);
+		
+		// Check if we have data to display
+		if (empty($report_data)) {
+			// Don't create chart if no data - just show message
+			$data = array(
+				'title' => $this->lang->line('reports_categories_summary_report'),
+				'subtitle' => $this->_get_subtitle_report(array('start_date' => $start_date, 'end_date' => $end_date)),
+				'chart_type' => 'reports/graphs/no_data',
+				'summary_data_1' => $summary,
+				'show_currency' => TRUE
+			);
+			$this->load->view('reports/graphical', $data);
+			return;
+		} else {
+			foreach($report_data as $row)
+			{
+				$row = $this->xss_clean($row);
 
-			$labels[] = $row['category'];
-			$series[] = array('meta' => $row['category'] . ' ' . round($row['total'] / $summary['total'] * 100, 2) . '%', 'value' => $row['total']);
+				$labels[] = $row['category'];
+				
+				// Fix percentage calculation to avoid division by zero and ensure valid values
+				$percentage = 0;
+				if (isset($summary['total']) && $summary['total'] > 0) {
+					$percentage = round($row['total'] / $summary['total'] * 100, 2);
+				}
+				
+				// Ensure value is a valid number for the chart
+				$value = (float)$row['total'];
+				if ($value < 0) $value = 0; // Ensure non-negative values
+				
+				$series[] = array('meta' => $row['category'] . ' ' . $percentage . '%', 'value' => $value);
+			}
 		}
 
 		$data = array(
@@ -658,6 +687,10 @@ class Reports extends Secure_Controller
 
 		$report_data = $model->getData($inputs);
 		$summary = $this->xss_clean($model->getSummaryData($inputs));
+		
+		// Debug logging
+		log_message('debug', 'Suppliers Report - Report data count: ' . count($report_data));
+		log_message('debug', 'Suppliers Report - Summary data: ' . print_r($summary, true));
 
 		$labels = array();
 		$series = array();
@@ -1281,11 +1314,33 @@ class Reports extends Secure_Controller
 		$data = array();
 		$data['specific_input_name'] = $this->lang->line('reports_supplier');
 
-		$supplier = array();
-		foreach($this->Supplier->get_all()->result() as $supplier)
-		{
-			$suppliers[$supplier->person_id] = $this->xss_clean($supplier->company_name . ' (' . $supplier->first_name . ' ' . $supplier->last_name . ')');
+		$suppliers = array();
+		
+		// Try to get all suppliers regardless of category
+		$this->db->from('suppliers');
+		$this->db->join('people', 'suppliers.person_id = people.person_id');
+		$this->db->where('suppliers.deleted', 0);
+		$this->db->order_by('suppliers.company_name', 'asc');
+		$supplier_result = $this->db->get();
+		
+		// Debug logging
+		log_message('debug', 'Suppliers dropdown - Query result count: ' . $supplier_result->num_rows());
+		if ($supplier_result->num_rows() > 0) {
+			log_message('debug', 'Suppliers dropdown - First supplier: ' . print_r($supplier_result->row(), true));
 		}
+		
+		foreach($supplier_result->result() as $supplier)
+		{
+			$supplier_name = $supplier->company_name;
+			if (!empty($supplier->first_name) || !empty($supplier->last_name)) {
+				$supplier_name .= ' (' . trim($supplier->first_name . ' ' . $supplier->last_name) . ')';
+			}
+			$suppliers[$supplier->person_id] = $this->xss_clean($supplier_name);
+		}
+		
+		// Debug logging
+		log_message('debug', 'Suppliers dropdown - Final suppliers array: ' . print_r($suppliers, true));
+		
 		$data['specific_input_data'] = $suppliers;
 		$data['sale_type_options'] = $this->get_sale_type_options();
 
@@ -1296,12 +1351,18 @@ class Reports extends Secure_Controller
 	{
 		$inputs = array('start_date' => $start_date, 'end_date' => $end_date, 'supplier_id' => $supplier_id, 'sale_type' => $sale_type);
 
+		// Debug logging
+		log_message('debug', 'Specific Supplier Report - Inputs: ' . print_r($inputs, true));
+
 		$this->load->model('reports/Specific_supplier');
 		$model = $this->Specific_supplier;
 
 		$model->create($inputs);
 
 		$report_data = $model->getData($inputs);
+		
+		// Debug logging
+		log_message('debug', 'Specific Supplier Report - Data count: ' . count($report_data));
 
 		$tabular_data = array();
 		foreach($report_data as $row)

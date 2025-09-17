@@ -21,7 +21,7 @@ class Summary_categories extends Summary_report
 		parent::_select($inputs);
 
 		$this->db->select('
-				items.category AS category,
+				MAX(item_categories.name) AS category,
 				SUM(sales_items.quantity_purchased) AS quantity_purchased
 		');
 	}
@@ -31,12 +31,13 @@ class Summary_categories extends Summary_report
 		parent::_from();
 
 		$this->db->join('items AS items', 'sales_items.item_id = items.item_id', 'inner');
+		$this->db->join('item_categories AS item_categories', 'items.item_category_id = item_categories.id', 'left');
 	}
 
 	protected function _group_order()
 	{
-		$this->db->group_by('category');
-		$this->db->order_by('category');
+		$this->db->group_by('item_categories.name');
+		$this->db->order_by('item_categories.name');
 	}
 }
 ?>

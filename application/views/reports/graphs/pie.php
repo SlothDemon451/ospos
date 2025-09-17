@@ -5,6 +5,9 @@
 		series: <?php echo json_encode($series_data_1); ?>
 	};
 	
+	// Debug logging (only if needed)
+	// console.log('Pie Chart Data:', data);
+	
 	// We are setting a few options for our chart and override the defaults
 	var options = {
 
@@ -70,7 +73,13 @@
 		}]*/
 	];
 
-	chart = new Chartist.Pie('#chart1', data, options, responsiveOptions);
+	try {
+		chart = new Chartist.Pie('#chart1', data, options, responsiveOptions);
+		console.log('Chart created successfully');
+	} catch (error) {
+		console.error('Error creating chart:', error);
+		console.error('Data that caused error:', data);
+	}
 
 	// generate random colours for the pie sliced because Chartist is currently limited to 15 colours
 	chart.on('draw', function(data) {

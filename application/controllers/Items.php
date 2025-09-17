@@ -242,7 +242,7 @@ class Items extends Secure_Controller
 			$category_options	= array_combine($category_options,$category_options);	//Overwrite indexes with values for saving in items table instead of attributes
 			$data['categories'] = array_merge($categories,$category_options);
 
-			$data['selected_category'] = $item_info->category;
+			$data['selected_category'] = isset($item_info->category) ? $item_info->category : '';
 		}
 
 		if($item_id === NEW_ITEM)

@@ -31,7 +31,7 @@ class Specific_supplier extends Report
 
 	public function getData(array $inputs)
 	{
-		$this->db->select('sale_id,
+		$this->db->select('MAX(sale_id) AS sale_id,
 			MAX(CASE
 			WHEN sale_type = ' . SALE_TYPE_POS . ' && sale_status = ' . COMPLETED . ' THEN \'' . $this->lang->line('reports_code_pos') . '\'
 			WHEN sale_type = ' . SALE_TYPE_INVOICE . ' && sale_status = ' . COMPLETED . ' THEN \'' . $this->lang->line('reports_code_invoice') . '\'
@@ -43,8 +43,8 @@ class Specific_supplier extends Report
 			END) AS type_code,
 			MAX(sale_status) as sale_status,
 			MAX(sale_time) AS sale_time,
-			MAX(items.name) AS name,
-			MAX(item_categories.name) AS category,
+			MAX(name) AS name,
+			MAX(category) AS category,
 			MAX(item_number) AS item_number,
 			SUM(quantity_purchased) AS items_purchased,
 			SUM(subtotal) AS subtotal,
@@ -55,8 +55,6 @@ class Specific_supplier extends Report
 			MAX(discount_type) AS discount_type,
 			MAX(discount) AS discount');
 		$this->db->from('sales_items_temp');
-		$this->db->join('items', 'sales_items_temp.item_id = items.item_id');
-		$this->db->join('item_categories', 'items.item_category_id = item_categories.id', 'left');
 
 		$this->db->where('supplier_id', $inputs['supplier_id']);
 

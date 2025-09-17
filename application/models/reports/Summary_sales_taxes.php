@@ -30,26 +30,30 @@ class Summary_sales_taxes extends Summary_report
 
 	public function getData(array $inputs)
 	{
-		$where = 'WHERE sale_status = ' . COMPLETED . ' ';
+		$where = 'WHERE sales.sale_status = ' . COMPLETED . ' ';
 
 		if(empty($this->config->item('date_or_time_format')))
 		{
-			$where .= 'AND DATE(sale_time) BETWEEN ' . $this->db->escape($inputs['start_date'])
+			$where .= 'AND DATE(sales.sale_time) BETWEEN ' . $this->db->escape($inputs['start_date'])
 			. ' AND ' . $this->db->escape($inputs['end_date']);
 		}
 		else
 		{
-			$where .= 'AND sale_time BETWEEN ' . $this->db->escape(rawurldecode($inputs['start_date'])) . ' AND ' . $this->db->escape(rawurldecode($inputs['end_date']));
+			$where .= 'AND sales.sale_time BETWEEN ' . $this->db->escape(rawurldecode($inputs['start_date'])) . ' AND ' . $this->db->escape(rawurldecode($inputs['end_date']));
 		}
 
-		$sql = "SELECT reporting_authority, jurisdiction_name, tax_category, tax_rate,
-			SUM(sale_tax_amount) AS tax
-			FROM " . $this->db->dbprefix('sales_taxes') . " AS sales_taxes
-			JOIN " . $this->db->dbprefix('sales') . " AS sales ON sales_taxes.sale_id = sales.sale_id
-			JOIN " . $this->db->dbprefix('tax_categories') . " AS tax_categories ON sales_taxes.tax_category_id = tax_categories.tax_category_id
-			JOIN " . $this->db->dbprefix('tax_jurisdictions') . " AS tax_jurisdictions ON sales_taxes.jurisdiction_id = tax_jurisdictions.jurisdiction_id "
+		// Use the actual sales_items_taxes table structure
+		$sql = "SELECT 
+			sales_items_taxes.name AS reporting_authority,
+			sales_items_taxes.name AS jurisdiction_name,
+			sales_items_taxes.name AS tax_category,
+			sales_items_taxes.percent AS tax_rate,
+			SUM(sales_items_taxes.item_tax_amount) AS tax
+			FROM " . $this->db->dbprefix('sales_items_taxes') . " AS sales_items_taxes
+			JOIN " . $this->db->dbprefix('sales') . " AS sales ON sales_items_taxes.sale_id = sales.sale_id "
 			. $where .
-			"GROUP BY reporting_authority, jurisdiction_name, tax_category, tax_rate";
+			"GROUP BY sales_items_taxes.name, sales_items_taxes.percent
+			ORDER BY sales_items_taxes.name, sales_items_taxes.percent";
 
 		$query = $this->db->query($sql);
 

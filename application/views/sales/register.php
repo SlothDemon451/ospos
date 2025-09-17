@@ -198,29 +198,16 @@ if(isset($success))
 								}
 								else
 								{
-									// For items with the tax_option set to 'with_tax', show the price including tax
-									if(isset($item['tax_option']) && $item['tax_option'] == 'with_tax')
-									{
-										// Get the total with tax
-										$total_with_tax = $item['price'];
-										
-										// Look for tax related to this specific item
-										foreach($taxes as $tax_key => $tax)
-										{
-											// Only add taxes that match this item and are fixed amount taxes
-											if(strpos($tax_key, $item['item_id']) !== false && isset($tax['tax_type']) && $tax['tax_type'] == '1')
-											{
-												// For fixed tax, add it to the price (divide by quantity to get per-unit price)
-												$total_with_tax = bcadd($total_with_tax, bcdiv($tax['sale_tax_amount'], $item['quantity'], 4), 4);
-											}
-										}
-										echo to_currency($total_with_tax);
-									}
-									else
-									{
-										echo to_currency($item['price']);
-									}
-									echo form_hidden('price', to_currency_no_money($item['price']));
+									// Make price editable for all items (not just ITEM_AMOUNT_ENTRY)
+									// This allows price override for specific customers without changing the original item price
+									echo form_input(array(
+										'name'=>'price', 
+										'class'=>'form-control input-sm price-override', 
+										'value'=>to_currency_no_money($item['price']), 
+										'tabindex'=>++$tabindex, 
+										'onClick'=>'this.select();',
+										'title'=>'Click to edit price for this sale only'
+									));
 								}
 								?>
 							</td>
